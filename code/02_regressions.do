@@ -60,9 +60,6 @@ global logs         "$output\logs"
 * ==============================================================================
 use "$data_proc/data", clear
 
-correl PEP PIP GFD* WDI*
-correl PEP_z PIP_z GFD* WDI*
-
 gen q2_doll = quad_2 * dollarized
 gen q3_doll = quad_3 * dollarized  
 gen q4_doll = quad_4 * dollarized
@@ -77,6 +74,7 @@ gen D_PIP_z = PIP_z * dollarized
 
 * Check for high correlation between PEP and PIP
 correl PEP PIP
+summarize PEP PIP
 
 * List observations by quadrant	  
 tab YEAR quadrant

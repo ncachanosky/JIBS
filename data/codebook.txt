@@ -1,0 +1,139 @@
+================================================================================
+CODEBOOK - paper-JIBS
+================================================================================
+Project: [Full Project Title]
+Author: Nicolás Cachanosky
+Co-authors: John D. Gibson, Joao P. Bastos
+Last Updated: Tue 11/25/2025
+================================================================================
+
+DATA SOURCES
+================================================================================
+1. Global Financial Development
+   - Source: The World Bank
+   - URL: https://www.worldbank.org/en/publication/gfdr/data/global-financial-development-database
+   - Download Date: 2025-NOV-26
+   - Coverage: 1960-2021, Yearly
+
+2. World Development Indicators
+   - Source: The World Bank
+   - URL: https://datatopics.worldbank.org/world-development-indicators/
+   - Download Date: 2025-NOV-26
+   - Coverage: 1960-2024, Yearly
+
+================================================================================
+VARIABLE DEFINITIONS
+================================================================================
+
+[CATEGORY 1 - e.g., IDENTIFIERS]
+---------------------------------
+GFDD.DM.13        : Corporate bond issuance volume to GDP (%)
+                    Source: Global Financial Development
+                    Units: %
+
+GFDD.OI.02        : Bank deposits to GDP (%)
+                    Source: Global Financial Development
+                    Units: %
+
+GFDD.OI.06        : 5-Bank Asset Concentration
+                    Source: Global Financial Development
+                    Units: Assets of five largest banks as a share of total commercial banking assets.
+
+GFDD.SI.01        : Bank Z-score
+                    Source: Global Financial Development
+                    Units: Z-score
+
+GFDD.SI.04        : Bank credit to bank deposits (%)
+                    Source: Global Financial Development
+                    Units: %
+
+FB.BNK.CAPA.ZS    : Bank capital to assets ratio (%)
+                    Source: World Development Indicators
+                    Units: %
+
+FS.AST.PRVT.GD.ZS : Domestic credit to private sector (% of GDP)
+                    Source: World Development Indicators
+                    Units: %
+
+NE.GDI.FPRV.ZS    : Gross fixed capital formation, private sector (% of GDP)
+                    Source: World Development Indicators
+                    Units: %
+
+
+
+[CATEGORY 2 - e.g., MACROECONOMIC VARIABLES]
+---------------------------------------------
+var_name       : Variable description
+                 Source: 
+                 Units: 
+                 Calculation: [if derived]
+                 Notes: 
+
+[CATEGORY 3 - e.g., CONTROL VARIABLES]
+---------------------------------------
+var_name       : Variable description
+                 Source: 
+                 Units: 
+                 Notes: 
+
+================================================================================
+CONSTRUCTED VARIABLES (created in processing code)
+================================================================================
+
+var_name       : Variable description
+                 Calculation: [formula or method]
+                 Code file: [filename where this is created]
+                 Notes: 
+
+var_name       : Variable description
+                 Calculation: 
+                 Code file: 
+                 Notes: 
+
+================================================================================
+MISSING DATA CODES
+================================================================================
+.      : Missing/Not available
+[code] : [meaning]
+[code] : [meaning]
+
+================================================================================
+SAMPLE RESTRICTIONS
+================================================================================
+- Time period: [years]
+- Geographic coverage: [countries/regions]
+- Exclusions: [what was excluded and why]
+- Panel structure: [balanced/unbalanced]
+- Sample size: [observations, if known]
+
+================================================================================
+NOTES AND CAVEATS
+================================================================================
+1. [Important note about data quality or measurement]
+2. [Unusual coding decisions]
+3. [Known data issues]
+4. [Comparability issues across sources]
+
+================================================================================
+FILE NAMING CONVENTIONS
+================================================================================
+raw_[source]_[date].[ext]       : Original downloaded data
+clean_[name]_[date].[ext]       : Cleaned data
+processed_[name]_[date].[ext]   : Processed/merged data
+final_[name]_[date].[ext]       : Final analysis dataset
+
+================================================================================
+RELATED DOCUMENTATION
+================================================================================
+- Data cleaning code: [filename]
+- Processing code: [filename]
+- Analysis code: [filename]
+- Additional documentation: [links or filenames]
+
+================================================================================
+VERSION HISTORY
+================================================================================
+Tue 11/25/2025 - NC - Initial codebook created
+[Date] - [Your initials] - [Brief description of changes]
+
+================================================================================

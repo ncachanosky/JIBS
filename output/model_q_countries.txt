@@ -1,0 +1,57 @@
+-------------------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:/Users/ncachanosky/OneDrive/Research/Working Papers/paper-JIBS/\output/model_q_countries.txt
+  log type:  text
+ opened on:   1 Dec 2025, 13:00:31
+
+. display _newline "COUNTRIES IN REGRESSION"
+
+COUNTRIES IN REGRESSION
+
+. display "================================="
+=================================
+
+. display _newline
+
+
+
+. tab countryname if e(sample) == 1
+
+                           Country Name |      Freq.     Percent        Cum.
+----------------------------------------+-----------------------------------
+                                  Chile |         18       12.41       12.41
+                     Dominican Republic |         13        8.97       21.38
+                                Ecuador |         15       10.34       31.72
+                            El Salvador |          9        6.21       37.93
+                              Guatemala |         14        9.66       47.59
+                                  Haiti |         13        8.97       56.55
+                               Honduras |         18       12.41       68.97
+                                 Mexico |         18       12.41       81.38
+                              Nicaragua |         14        9.66       91.03
+                                Uruguay |         10        6.90       97.93
+                          Venezuela, RB |          3        2.07      100.00
+----------------------------------------+-----------------------------------
+                                  Total |        145      100.00
+
+. display _newline "Summary Statistics:"
+
+Summary Statistics:
+
+. display "-------------------"
+-------------------
+
+. display "Total observations: " e(N)
+Total observations: 145
+
+. display "Number of countries: " e(N_g)
+Number of countries: 11
+
+. display "Average obs per country: " e(N) / e(N_g)
+Average obs per country: 13.181818
+
+. log close
+      name:  <unnamed>
+       log:  C:/Users/ncachanosky/OneDrive/Research/Working Papers/paper-JIBS/\output/model_q_countries.txt
+  log type:  text
+ closed on:   1 Dec 2025, 13:00:31
+-------------------------------------------------------------------------------------------------------------------------------

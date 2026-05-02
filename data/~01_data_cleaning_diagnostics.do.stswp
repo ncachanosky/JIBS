@@ -1,0 +1,497 @@
+/*==============================================================================
+PROJECT: Populism and Corporate Cash Holdings
+FILE: 01_data_cleaning_diagnostics.do
+PURPOSE: Clean data to Latin America + Europe and run comprehensive diagnostics
+AUTHOR: Nicolas (with Claude)
+DATE: April 21, 2026
+==============================================================================*/
+
+clear all
+set more off
+version 17
+
+// Set working directory (CHANGE THIS TO YOUR PATH)
+// cd "C:/Users/YourName/Documents/PopulismProject"
+
+/*==============================================================================
+PART A: LOAD DATA AND INITIAL CLEANING
+==============================================================================*/
+
+// Load data
+use "data.dta", clear
+
+// Display initial sample size
+di as result "INITIAL DATASET"
+count
+di as text "Total observations: " as result %12.0fc r(N)
+
+// Count unique firms and countries
+quietly: distinct gvkey
+di as text "Unique firms (gvkey): " as result %12.0fc r(ndistinct)
+quietly: distinct fic
+di as text "Unique countries (fic): " as result %12.0fc r(ndistinct)
+
+
+/*==============================================================================
+PART B: DEFINE REGIONAL SAMPLES
+==============================================================================*/
+
+// Generate region indicator
+gen region = ""
+label var region "Geographic region"
+
+// Latin American countries (ISO 3166 alpha-3 codes)
+replace region = "Latin America" if inlist(fic, "ARG", "BHS", "BLZ", "BRA", "BRB")
+replace region = "Latin America" if inlist(fic, "CHL", "COL", "CRI", "ECU", "SLV")
+replace region = "Latin America" if inlist(fic, "GTM", "HND", "JAM", "MEX", "NIC")
+replace region = "Latin America" if inlist(fic, "PAN", "PRY", "PER", "TTO", "URY", "VEN")
+replace region = "Latin America" if inlist(fic, "CUB", "DOM", "HTI")
+
+// European countries
+replace region = "Europe" if inlist(fic, "AUT", "BEL", "BGR", "HRV", "CYP")
+replace region = "Europe" if inlist(fic, "CZE", "DNK", "EST", "FIN", "FRA")
+replace region = "Europe" if inlist(fic, "DEU", "GRC", "HUN", "IRL", "ITA")
+replace region = "Europe" if inlist(fic, "LVA", "LTU", "LUX", "MLT", "NLD")
+replace region = "Europe" if inlist(fic, "POL", "PRT", "ROU", "SVK", "SVN")
+replace region = "Europe" if inlist(fic, "ESP", "SWE", "GBR", "NOR", "CHE")
+replace region = "Europe" if inlist(fic, "ISL", "MKD", "SRB", "TUR", "UKR")
+replace region = "Europe" if inlist(fic, "BLR", "RUS", "ALB", "BIH", "MNE")
+
+// Keep only Latin America and Europe
+keep if region != ""
+
+di as text _newline(2) "=" * 80
+di as result "AFTER RESTRICTING TO LATIN AMERICA + EUROPE"
+di as text "=" * 80
+count
+di as text "Total observations: " as result %12.0fc r(N)
+
+
+/*==============================================================================
+PART C: GENERATE YEAR VARIABLE
+==============================================================================*/
+
+// Convert datadate to numeric year
+gen year = year(date(datadate, "DMY"))
+label var year "Calendar year"
+
+// Display time period
+quietly: summarize year
+di as text "Time period: " as result r(min) " - " r(max)
+
+// Check for missing years
+count if missing(year)
+if r(N) > 0 {
+    di as error "WARNING: " r(N) " observations have missing year"
+}
+
+
+/*==============================================================================
+PART D: REGIONAL BREAKDOWN
+==============================================================================*/
+
+di as text _newline(2) "=" * 80
+di as result "OBSERVATIONS BY REGION"
+di as text "=" * 80
+
+// Tabulate by region
+tabulate region, missing
+
+// Latin America countries
+di as text _newline "LATIN AMERICAN COUNTRIES:"
+di as text "{hline 50}"
+preserve
+keep if region == "Latin America"
+contract fic, freq(n_obs)
+gsort -n_obs
+format n_obs %12.0fc
+list fic n_obs, clean noobs
+restore
+
+// European countries
+di as text _newline "EUROPEAN COUNTRIES:"
+di as text "{hline 50}"
+preserve
+keep if region == "Europe"
+contract fic, freq(n_obs)
+gsort -n_obs
+format n_obs %12.0fc
+list fic n_obs, clean noobs
+restore
+
+
+/*==============================================================================
+PART E: PANEL STRUCTURE DIAGNOSTICS
+==============================================================================*/
+
+di as text _newline(2) "=" * 80
+di as result "PANEL STRUCTURE DIAGNOSTICS"
+di as text "=" * 80
+
+// Declare panel structure
+xtset gvkey year
+
+// Panel summary
+xtdescribe, patterns(20)
+
+// Check balance
+di as text _newline "PANEL BALANCE CHECK:"
+di as text "{hline 50}"
+
+// Count firms by number of observations
+preserve
+bysort gvkey: gen n_years = _N
+by gvkey: keep if _n == 1
+tabulate n_years, missing
+restore
+
+// Identify balanced vs unbalanced
+quietly: xtdescribe
+local T_min = r(min)
+local T_max = r(max)
+di as text "Min years per firm: " as result `T_min'
+di as text "Max years per firm: " as result `T_max'
+
+if `T_min' == `T_max' {
+    di as result "Panel is BALANCED"
+} 
+else {
+    di as result "Panel is UNBALANCED"
+}
+
+
+/*==============================================================================
+PART F: FIRMS PER COUNTRY (UNBALANCED SAMPLE CONCERN)
+==============================================================================*/
+
+di as text _newline(2) "=" * 80
+di as result "FIRMS PER COUNTRY (Unbalanced Sample Diagnostic)"
+di as text "=" * 80
+
+// Count unique firms per country
+preserve
+bysort fic gvkey: keep if _n == 1
+contract fic, freq(n_firms)
+gsort -n_firms
+
+// Add cumulative percentage
+egen total_firms = total(n_firms)
+gen pct = 100 * n_firms / total_firms
+gen cum_pct = sum(pct)
+
+format n_firms %12.0fc
+format pct cum_pct %6.2f
+
+di as text _newline "Firms per country (sorted by firm count):"
+list fic n_firms pct cum_pct, clean noobs
+
+// Summary statistics
+summarize n_firms, detail
+di as text _newline "DISTRIBUTION OF FIRMS PER COUNTRY:"
+di as text "Mean: " as result %8.1f r(mean)
+di as text "Median: " as result %8.1f r(p50)
+di as text "Std Dev: " as result %8.1f r(sd)
+di as text "Min: " as result %8.0f r(min)
+di as text "Max: " as result %8.0f r(max)
+
+// Flag highly dominant countries (>10% of sample)
+count if pct > 10
+if r(N) > 0 {
+    di as error _newline "WARNING: " r(N) " country(ies) account for >10% of firms each"
+    list fic n_firms pct if pct > 10, clean noobs
+}
+
+restore
+
+
+/*==============================================================================
+PART G: FIRM-YEAR OBSERVATIONS PER COUNTRY
+==============================================================================*/
+
+di as text _newline(2) "=" * 80
+di as result "FIRM-YEAR OBSERVATIONS PER COUNTRY"
+di as text "=" * 80
+
+preserve
+contract fic, freq(n_obs)
+gsort -n_obs
+
+// Add cumulative percentage
+egen total_obs = total(n_obs)
+gen pct_obs = 100 * n_obs / total_obs
+gen cum_pct_obs = sum(pct_obs)
+
+format n_obs %12.0fc
+format pct_obs cum_pct_obs %6.2f
+
+di as text "Firm-year observations per country:"
+list fic n_obs pct_obs cum_pct_obs, clean noobs
+
+// Summary
+summarize n_obs, detail
+
+// Flag highly dominant countries (>10% of observations)
+count if pct_obs > 10
+if r(N) > 0 {
+    di as error _newline "WARNING: " r(N) " country(ies) account for >10% of observations each"
+    list fic n_obs pct_obs if pct_obs > 10, clean noobs
+}
+
+restore
+
+
+/*==============================================================================
+PART H: TEMPORAL COVERAGE BY COUNTRY
+==============================================================================*/
+
+di as text _newline(2) "=" * 80
+di as result "TEMPORAL COVERAGE BY COUNTRY"
+di as text "=" * 80
+
+preserve
+collapse (min) year_min=year (max) year_max=year (count) n_obs=year, by(fic)
+gen span = year_max - year_min + 1
+format n_obs %12.0fc
+
+gsort -n_obs
+di as text "Year range and observation count by country:"
+list fic year_min year_max span n_obs, clean noobs
+
+restore
+
+
+/*==============================================================================
+PART I: MISSING DATA ANALYSIS (KEY VARIABLES)
+==============================================================================*/
+
+di as text _newline(2) "=" * 80
+di as result "MISSING DATA ANALYSIS"
+di as text "=" * 80
+
+// Check which cash variables exist
+local cash_vars "ch che chee"
+local existing_cash_vars ""
+
+foreach var of local cash_vars {
+    capture confirm variable `var'
+    if !_rc {
+        local existing_cash_vars "`existing_cash_vars' `var'"
+    }
+}
+
+// Missing data summary for key variables
+di as text _newline "Missing observations for key variables:"
+di as text "{hline 60}"
+di as text "{ralign 20:Variable} {ralign 15:Missing N} {ralign 15:Missing %} {ralign 10:Non-miss N}"
+di as text "{hline 60}"
+
+foreach var of varlist gvkey fic year conm `existing_cash_vars' at {
+    quietly: count if missing(`var')
+    local miss_n = r(N)
+    quietly: count
+    local total_n = r(N)
+    local miss_pct = 100 * `miss_n' / `total_n'
+    local nonmiss_n = `total_n' - `miss_n'
+    
+    di as text %20s "`var'" ///
+       as result %15.0fc `miss_n' ///
+       as result %14.2f `miss_pct' "%" ///
+       as result %11.0fc `nonmiss_n'
+}
+
+// Missing data patterns across countries
+di as text _newline(2) "MISSING DATA BY COUNTRY (for cash variables):"
+di as text "{hline 60}"
+
+foreach var of local existing_cash_vars {
+    di as text _newline "Variable: `var'"
+    preserve
+    contract fic if missing(`var'), freq(n_miss)
+    gsort -n_miss
+    if _N > 0 {
+        list fic n_miss, clean noobs
+    }
+    else {
+        di as result "  No missing values"
+    }
+    restore
+}
+
+
+/*==============================================================================
+PART J: TIME SERIES COVERAGE
+==============================================================================*/
+
+di as text _newline(2) "=" * 80
+di as result "TIME SERIES: OBSERVATIONS BY YEAR"
+di as text "=" * 80
+
+preserve
+contract year, freq(n_obs)
+gen n_firms = .
+
+// Count unique firms per year
+forvalues y = 1987/2026 {
+    quietly: count if year == `y'
+    if r(N) > 0 {
+        quietly: distinct gvkey if year == `y'
+        quietly: replace n_firms = r(ndistinct) if year == `y'
+    }
+}
+
+format n_obs n_firms %12.0fc
+list year n_obs n_firms, clean noobs sep(5)
+
+// Plot would go here if using Stata graphics
+// twoway (line n_obs year) (line n_firms year), ///
+//        legend(label(1 "Observations") label(2 "Firms"))
+
+restore
+
+
+/*==============================================================================
+PART K: GENERATE USEFUL PANEL VARIABLES
+==============================================================================*/
+
+di as text _newline(2) "=" * 80
+di as result "GENERATING PANEL VARIABLES"
+di as text "=" * 80
+
+// Sort data
+sort gvkey year
+
+// Generate firm-specific variables
+by gvkey: gen firm_first_year = year[1]
+by gvkey: gen firm_last_year = year[_N]
+by gvkey: gen firm_n_years = _N
+
+label var firm_first_year "First year firm appears in sample"
+label var firm_last_year "Last year firm appears in sample"
+label var firm_n_years "Number of years firm appears"
+
+// Generate country-specific variables
+egen country_n_firms = count(gvkey), by(fic)
+label var country_n_firms "Number of unique firms in country"
+
+egen country_n_obs = count(1), by(fic)
+label var country_n_obs "Number of firm-year obs in country"
+
+// Summary
+di as text _newline "Firm duration in sample:"
+tabulate firm_n_years, missing
+
+summarize firm_n_years, detail
+di as text "Mean years per firm: " as result %6.2f r(mean)
+di as text "Median years per firm: " as result %6.0f r(p50)
+
+
+/*==============================================================================
+PART L: IDENTIFY POTENTIAL DATA ISSUES
+==============================================================================*/
+
+di as text _newline(2) "=" * 80
+di as result "POTENTIAL DATA QUALITY ISSUES"
+di as text "=" * 80
+
+// 1. Duplicate firm-year observations
+duplicates report gvkey year
+local n_dup = r(unique_value)
+if r(N) != r(unique_value) {
+    di as error "WARNING: Duplicate gvkey-year combinations detected!"
+    duplicates tag gvkey year, gen(dup_flag)
+    list gvkey year fic conm if dup_flag > 0, clean
+    drop dup_flag
+}
+else {
+    di as result "✓ No duplicate gvkey-year combinations"
+}
+
+// 2. Firms changing countries
+preserve
+bysort gvkey (year): gen country_change = (fic != fic[_n-1]) if _n > 1
+egen ever_changed = max(country_change), by(gvkey)
+count if ever_changed == 1
+if r(N) > 0 {
+    di as error "WARNING: " r(N) " firm-year obs where firm changed country"
+    bysort gvkey: keep if _n == 1 & ever_changed == 1
+    list gvkey conm, clean
+}
+else {
+    di as result "✓ No firms changing countries"
+}
+restore
+
+// 3. Extreme outliers in key variables (if they exist)
+foreach var of local existing_cash_vars {
+    quietly: summarize `var', detail
+    local p99 = r(p99)
+    local p1 = r(p1)
+    quietly: count if `var' > `p99' & !missing(`var')
+    local n_high = r(N)
+    quietly: count if `var' < `p1' & !missing(`var')
+    local n_low = r(N)
+    
+    if `n_high' > 0 | `n_low' > 0 {
+        di as text "`var': " as result `n_low' " below p1, " `n_high' " above p99"
+    }
+}
+
+
+/*==============================================================================
+PART M: SAVE CLEANED DATASET
+==============================================================================*/
+
+di as text _newline(2) "=" * 80
+di as result "SAVING CLEANED DATASET"
+di as text "=" * 80
+
+// Keep useful variables
+order gvkey fic year region conm
+
+// Save
+compress
+save "data_latam_europe.dta", replace
+di as result "✓ Cleaned dataset saved as: data_latam_europe.dta"
+
+// Export summary statistics
+preserve
+collapse (count) n_obs=gvkey (mean) has_che=che, by(fic region)
+export delimited using "country_summary.csv", replace
+restore
+
+di as result "✓ Country summary exported to: country_summary.csv"
+
+
+/*==============================================================================
+PART N: FINAL SUMMARY
+==============================================================================*/
+
+di as text _newline(2) "=" * 80
+di as result "FINAL SUMMARY"
+di as text "=" * 80
+
+count
+di as text "Total firm-year observations: " as result %12.0fc r(N)
+
+distinct gvkey
+di as text "Total unique firms: " as result %12.0fc r(ndistinct)
+
+distinct fic
+di as text "Total countries: " as result %12.0fc r(ndistinct)
+
+quietly: count if region == "Latin America"
+di as text "Latin American observations: " as result %12.0fc r(N)
+
+quietly: count if region == "Europe"
+di as text "European observations: " as result %12.0fc r(N)
+
+quietly: summarize year
+di as text "Time period: " as result r(min) " to " r(max)
+
+di as text _newline(2) "=" * 80
+di as result "DATA CLEANING AND DIAGNOSTICS COMPLETE"
+di as text "=" * 80
+
+/*==============================================================================
+END OF DO-FILE
+==============================================================================*/

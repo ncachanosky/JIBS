@@ -38,7 +38,7 @@ cap destring sic, replace
 encode loc, gen(iso)
 
 local after "loc"
-foreach v in fic costat datafmt indfmt isin loc {
+foreach v in fic costat datafmt indfmt isin {
 	rename `v' `v'_tmp
 	encode `v'_tmp, gen(`v')
 	drop `v'_tmp
@@ -53,11 +53,14 @@ foreach v in fic costat datafmt indfmt isin loc {
 }
 
 // If incorporation is in a different country than headquarters
-gen foreign = (loc != fic)
+gen foreign = (iso != fic)
 
 // Clean and gen vars 
 cap gen active = (costat=="A")
 drop costat
+
+// 
+tab curcd if loc=="USA"
 
 // Dates are always last day of a given month/year, so we can ignore day
 gen month = month(datadate)
@@ -68,6 +71,9 @@ order month year, after(date)
 // Keep only obs with AT LEAST the outcome var
 keep if ch!=.
 
+// This will serve as count / number of obs by country
+gen firms = 1
+
 // Export Firm-level data
 //------------------------------------------------------------------------------
 save "$path/JIBS/data/compustat-firm-clean.dta", replace
@@ -77,7 +83,7 @@ save "$path/JIBS/data/compustat-firm-clean.dta", replace
 //------------------------------------------------------------------------------
 
 collapse (mean) aco ch che cheb chech chee chefs chenfd cmp dcsfd dd1 dvc dvp /// 
-	dvpdp dvt emp fca icapt lco opprft pi revt foreign, by(iso year)
+	dvpdp dvt emp fca icapt lco opprft pi revt foreign (sum) firms, by(iso year)
 	
 save "$path/JIBS/data/compustat-country-clean.dta", replace
 	

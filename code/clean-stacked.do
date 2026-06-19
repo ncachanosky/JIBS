@@ -67,6 +67,8 @@ rename iso _iso
 encode _iso, gen(iso)
 drop _iso
 
+save "$path/JIBS/data/funke-ple-clean.dta"
+
 * set panel vars 
 xtset iso year
 
@@ -205,57 +207,6 @@ bysort id (year): gen relative_year = _n - 5
 tab relative_year // check 
 
 save "$path/JIBS/data/stacked-panel.dta", replace
-
-//==============================================================================
-//  COMPUSTAT Data 
-/*==============================================================================
-- Clean COMPUSTAT and merge to populism data
-==============================================================================*/
-
-// Load COMPUSTAT data
-use "$path/JIBS/data/raw/jibs.dta", clear
-
-// No variance | count if consol!="C" | county!="" -> 0
-drop consol county 
-
-// Fix data formats 
-cap destring gvkey, replace
-cap destring sic, replace
-
-encode loc, gen(iso)
-
-local after "loc"
-foreach v in fic costat datafmt indfmt isin loc {
-	rename `v' `v'_tmp
-	encode `v'_tmp, gen(`v')
-	drop `v'_tmp
-	
-	if "`v'" == "loc" {
-		order `v', first
-	}
-	else {
-		order `v', after(`after')
-		local after "`v'" // update the local 
-	}	
-}
-
-// If incorporation is in a different country than headquarters
-gen foreign = (loc != fic)
-
-// Clean and gen vars 
-cap gen active = (costat=="A")
-drop costat
-
-// Dates are always last day of a given month/year, so we can ignore day
-gen month = month(datadate)
-gen year = year(datadate)
-rename datadate date
-order month year, after(date)
-
-// Keep only obs with AT LEAST the outcome var
-keep if ch!=.
-
-save "$path/JIBS/data/jibs-clean.dta", replace
 
 
 // Merge data

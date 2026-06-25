@@ -71,8 +71,15 @@ order month year, after(date)
 // Keep only obs with AT LEAST the outcome var
 keep if ch!=.
 
-// This will serve as count / number of obs by country
-gen firms = 1
+//------------------------------------------------------------------------------
+// Collapse and save firm-level data
+//------------------------------------------------------------------------------
+
+/// We collapse because some firms are interviewed twice within a year
+
+collapse (mean) aco ch che cheb chech chee chefs chenfd cmp dcsfd dd1 dvc /// 
+	dvp dvpdp dvt emp fca icapt lco opprft pi revt foreign, ///
+	by(gvkey iso year) 
 
 // Export Firm-level data
 //------------------------------------------------------------------------------
@@ -81,6 +88,9 @@ save "$path/JIBS/data/compustat-firm-clean.dta", replace
 //------------------------------------------------------------------------------
 // Collapse and save country-level data
 //------------------------------------------------------------------------------
+
+// This will serve as count / number of obs by country
+gen firms = 1
 
 collapse (mean) aco ch che cheb chech chee chefs chenfd cmp dcsfd dd1 dvc dvp /// 
 	dvpdp dvt emp fca icapt lco opprft pi revt foreign (sum) firms, by(iso year)

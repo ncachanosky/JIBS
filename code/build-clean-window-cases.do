@@ -1,19 +1,9 @@
 /*==============================================================================
 Project: JIBS Paper
-File: data_builder.do
-Authors: Joao P. Bastos, Nicolás Cachanosky, John D. Gibson
-Email: ncachanosky@utep.edu
-Institution: The University of Texas at El Paso
-Created: 26-Nov-2025
-Last Modified: 26-Nov-2025
-
-Description:
-    Clean and create dataset
-
-Usage:
-    do data_builder.do
+Authors: J. P. Bastos, Nicolás Cachanosky, John D. Gibson
+================================================================================
+- Build stacked dataset 
 ==============================================================================*/
-
 
 //------------------------------------------------------------------------------
 // Setup
@@ -30,50 +20,32 @@ if "`c(username)'" == "ncachosnky" {
 	global path "C:/Users/ncachanosky/OneDrive/Research/Working Papers/paper-JIBS"
 }
 
-
-
 //------------------------------------------------------------------------------
-// Load region ids 
-//------------------------------------------------------------------------------
-import excel "$path/JIBS/data/raw/UNSD — Methodology.xlsx", firstrow clear
-
-rename ISOalpha3Code iso 
-
-drop *Code Global* Country*
-
-rename RegionName continent
-rename SubregionName region
-rename IntermediateRegionName subregion 
-
-order iso continent region subregion
-
-//------------------------------------------------------------------------------
-// Merge opulism data and create treatment indicators
+// 1. Preparation
 //------------------------------------------------------------------------------
 
-merge 1:m iso using "$path/JIBS/data/raw/PLE_panel2.dta", ///
-	keep(match using) nogen
+use "$path/JIBS/data/funke-ple-clean.dta", clear
 
-// Fix Taiwan
-replace continent = "Asia" if country=="Taiwan"
-replace region = "Eastern Asia" if country=="Taiwan"
-
-sort iso year
-
-// COMPUSTAT coverage
-keep if year>=1987
-
-rename iso _iso
-encode _iso, gen(iso)
-drop _iso
-
-save "$path/JIBS/data/funke-ple-clean.dta"
-
-* set panel vars 
+// Set panel vars 
 xtset iso year
 
-* Treated dummy == 1 if there's a switch to a populist leader
-* Requires that leader in the last four years is not populist
+// Set panel obs:
+global pvars "continent region subregion country year independent pop lpop rpop iso"
+
+// Merge firm observation counts:
+merge 1:1 iso year using "$path/JIBS/data/compustat-country-clean.dta"
+
+keep if _merge==3
+
+// Keep only country-years in Compustat data
+keep $pvars firms
+keep if firms>=1 
+drop firms
+
+sort iso year 
+
+// Treated dummy == 1 if there's a switch to a populist leader
+// Requires that leader in the last four years is not populist
 gen treat_pop = (pop == 1 & ///
 				L1.pop == 0 & ///
 				L2.pop == 0 & ///
@@ -85,7 +57,7 @@ gen treat_pop = (pop == 1 & ///
 // AND if the leader is still populist in the current year (pop==1).
 bysort iso (year): replace treat_pop = 1 if pop[_n-1] == 1 & pop == 1
 
-* Identify each case of a transition 
+// Identify each case of a transition 
 
 cap drop case_start case_chronological_count start_id
 
@@ -128,14 +100,11 @@ gen long case_id = max(start_id, L1.start_id, L2.start_id, L3.start_id, ///
 drop case_start case_chronological_count start_id
 
 // Save a clean copy of the current data to use as a source
-save "$path/JIBS/data/treat-panel.dta", replace
+save "$path/JIBS/data/prep-stacked.dta", replace
 
 //------------------------------------------------------------------------------
-// Create stacked dataset with treated and control units
+// 2. Loop through each case and append to temp file
 //------------------------------------------------------------------------------
-
-// 1. Preparation
-use "$path/JIBS/data/treat-panel.dta", clear
 
 // Get a list of all unique treatment case IDs to loop over.
 levelsof case_id, local(cases)
@@ -144,13 +113,10 @@ levelsof case_id, local(cases)
 tempfile stacked_results
 save `stacked_results', emptyok
 
-
-// 2. Loop through each case
-
 // Now, loop through each case ID you just stored in the local macro `cases`.
 foreach case of local cases {
     // In each iteration, start with a fresh copy of the original data.
-    use "$path/JIBS/data/treat-panel.dta", clear
+    use "$path/JIBS/data/prep-stacked.dta", clear
 
     // Find the start and end year for the current case.
     qui summarize year if case_id == `case'
@@ -186,7 +152,9 @@ foreach case of local cases {
     save `stacked_results', replace
 }
 
+//------------------------------------------------------------------------------
 // 3. Finalization
+//------------------------------------------------------------------------------
 
 // Load the final, stacked dataset.
 use `stacked_results', clear
@@ -206,61 +174,7 @@ egen id = group(iso cohort)
 bysort id (year): gen relative_year = _n - 5
 tab relative_year // check 
 
-save "$path/JIBS/data/stacked-panel.dta", replace
-
-
-// Merge data
-//------------------------------------------------------------------------------
-
-use "$path/JIBS/data/stacked-panel.dta", clear
-
-merge m:m iso year using "$path/JIBS/data/jibs-clean.dta"
-
-drop if _merge==1 // Countries with no COMPUSTAT data
-drop if _merge==2 // Firms in country-years not in treat or control
-drop _merge
-
-// Assure all ids have observations in all years
-
-// Count number of obs in each id-year
-egen count_id_year = count(id), by(id year)
-
-drop if count_id_year <10
-
-// Count number of obs in each id
-egen count_id = count(id), by(id)
-
-// Because we dropped country-years with less than 10 obs, a complete panel
-// of eight years should have 80 obs.
-drop if count_id < 80
-
-save "$path/JIBS/data/master-stacked.dta", replace
-
-
-// Merge data
-//------------------------------------------------------------------------------
-
-use "$path/JIBS/data/stacked-panel.dta", clear
-
-merge m:m iso year using "$path/JIBS/data/jibs-clean.dta"
-
-drop if _merge==1 // Countries with no COMPUSTAT data
-drop if _merge==2 // Firms in country-years not in treat or control
-drop _merge
-
-// Assure all ids have observations in all years
-egen firm_id = group(gvkey id)
-
-// Each firm appears only once a year, so firms with complete data should 
-// appear 8x
-egen count_id_year = count(firm_id), by(firm_id)
-
-keep if count_id_year == 8
-
-save "$path/JIBS/data/complete-stacked.dta", replace
-
-
-
-
+// Save -4 to 4 panel 
+save "$path/JIBS/data/clean-window-cases.dta", replace
 
 

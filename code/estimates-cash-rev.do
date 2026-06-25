@@ -2,7 +2,9 @@
 Project: JIBS Paper
 Authors: J. P. Bastos, Nicolás Cachanosky, John D. Gibson
 ================================================================================
-- Build stacked dataset 
+- ROBUSTNESS: outcome = cash / revenue (ch/revt), replacing log cash holdings.
+  Identical specifications to estimates.do otherwise. Firm-years with revt==0
+  or missing are dropped by the ratio.
 ==============================================================================*/
 
 //------------------------------------------------------------------------------
@@ -26,16 +28,14 @@ if "`c(username)'" == "ncachosnky" {
 
 use "$path/JIBS/data/master-funke-ple-country.dta", clear
 
-drop if region == "Northern Europe" | region == "Western Europe" | region == "Northern Africa" | region=="Australia and New Zealand"
-
-gen log_ch = log(ch)
+gen cash_rev = ch/revt
 
 // Equal Weights
-reg log_ch pop i.iso i.year, clust(iso)
+reg cash_rev pop i.iso i.year, clust(iso)
 estimates store m1
 
 // Weighted by Firm Obs
-reg log_ch pop i.iso i.year [aweight=firms], clust(iso)
+reg cash_rev pop i.iso i.year [aweight=firms], clust(iso)
 estimates store m1w
 
 //------------------------------------------------------------------------------
@@ -44,16 +44,14 @@ estimates store m1w
 
 use "$path/JIBS/data/master-vparty-country.dta", clear
 
-drop if region == "Northern Europe" | region == "Western Europe" | region == "Northern Africa" | region=="Australia and New Zealand"
-
-gen log_ch = log(ch)
+gen cash_rev = ch/revt
 
 // Equal Weights
-reg log_ch v2xpa_popul i.iso i.year, clust(iso)
+reg cash_rev v2xpa_popul i.iso i.year, clust(iso)
 estimates store m2
 
 // Weighted by Firm Obs
-reg log_ch v2xpa_popul i.iso i.year [aweight=firms], clust(iso)
+reg cash_rev v2xpa_popul i.iso i.year [aweight=firms], clust(iso)
 estimates store m2w
 
 
@@ -63,16 +61,14 @@ estimates store m2w
 
 use "$path/JIBS/data/master-funke-ple-firm.dta", clear
 
-drop if region == "Northern Europe" | region == "Western Europe" | region == "Northern Africa" | region=="Australia and New Zealand"
-
-gen log_ch = log(ch)
+gen cash_rev = ch/revt
 
 // Country + Year FE
-reg log_ch pop i.iso i.year, clust(iso)
+reg cash_rev pop i.iso i.year, clust(iso)
 estimates store m3a
 
 // Firm + Year FE
-reghdfe log_ch pop i.year, absorb(i.gvkey) clust(iso)
+reghdfe cash_rev pop i.year, absorb(i.gvkey) clust(iso)
 estimates store m3b
 
 //------------------------------------------------------------------------------
@@ -81,16 +77,14 @@ estimates store m3b
 
 use "$path/JIBS/data/master-vparty-firm.dta", clear
 
-drop if region == "Northern Europe" | region == "Western Europe" | region == "Northern Africa" | region=="Australia and New Zealand"
-
-gen log_ch = log(ch)
+gen cash_rev = ch/revt
 
 // Country + Year FE
-reg log_ch v2xpa_popul i.iso i.year, clust(iso)
+reg cash_rev v2xpa_popul i.iso i.year, clust(iso)
 estimates store m4a
 
 // Firm + Year FE
-reghdfe log_ch v2xpa_popul i.year, absorb(i.gvkey) clust(iso)
+reghdfe cash_rev v2xpa_popul i.year, absorb(i.gvkey) clust(iso)
 estimates store m4b
 
 //------------------------------------------------------------------------------
@@ -99,16 +93,14 @@ estimates store m4b
 
 use "$path/JIBS/data/master-twfe-country.dta", clear
 
-drop if region == "Northern Europe" | region == "Western Europe" | region == "Northern Africa" | region=="Australia and New Zealand"
-
-gen log_ch = log(ch)
+gen cash_rev = ch/revt
 
 // Equal Weights
-reg log_ch pop i.iso i.year, clust(iso)
+reg cash_rev pop i.iso i.year, clust(iso)
 estimates store m5a
 
 // Weighted by Firm Obs
-reg log_ch pop i.iso i.year [aweight=firms], clust(iso)
+reg cash_rev pop i.iso i.year [aweight=firms], clust(iso)
 estimates store m5b
 
 //------------------------------------------------------------------------------
@@ -133,7 +125,7 @@ coefplot ///
 	xline(0, lcolor(black)) ///
 	levels(90) ///
 	mcolor(navy) ciopts(recast(rcap) color(navy)) ///
-	xtitle("Populism coef. on log cash (90% CI)", size(small)) ///
+	xtitle("Populism coef. on cash/revenue (90% CI)", size(small)) ///
 	legend(off) ///
 	name(country_panel, replace) ///
 	subtitle("Country level", justification(center) size(small))
@@ -148,7 +140,7 @@ coefplot ///
 	xline(0, lcolor(black)) ///
 	levels(90) ///
 	mcolor(cranberry) ciopts(recast(rcap) color(cranberry)) ///
-	xtitle("Populism coef. on log cash (90% CI)", size(small)) ///
+	xtitle("Populism coef. on cash/revenue (90% CI)", size(small)) ///
 	legend(off) ///
 	name(firm_panel, replace) ///
 	subtitle("Firm level", justification(center) size(small))
@@ -164,9 +156,7 @@ graph combine country_panel firm_panel, ///
 
 use "$path/JIBS/data/master-twfe-country.dta", clear
 
-drop if region == "Northern Europe" | region == "Western Europe" | region == "Northern Africa" | region=="Australia and New Zealand"
-
-gen log_ch = log(ch)
+gen cash_rev = ch/revt
 
 /// Create indicators for relative_year between -4 and +4 
 gen lead4 =(relative_year == -4 & treat==1)
@@ -179,7 +169,7 @@ gen lag2 =(relative_year == 2 & treat==1)
 gen lag3 =(relative_year == 3 & treat==1)
 
 // Equal Weights 
-reghdfe log_ch treat lead* lag0-lag3, absorb(i.iso i.year) clust(iso)
+reghdfe cash_rev treat lead* lag0-lag3, absorb(i.iso i.year) clust(iso)
 
 estimates store twfe_event
 
@@ -201,7 +191,7 @@ coefplot (twfe_event, ///
 	vertical ///
 	yline(0, lcolor(black)) ///
 	xline(4.5, lcolor(gs8) lpattern(dash)) ///
-	ytitle("Log Cash Holdings", size(small)) ///
+	ytitle("Cash / Revenue", size(small)) ///
 	xtitle("Periods Since Populist Leader", size(small)) ///
 	xlabel(1 "-4" 2 "-3" 3 "-2" 4 "-1" 5 "0" 6 "1" 7 "2" 8 "3") ///
 	levels(90) ///
@@ -216,14 +206,12 @@ coefplot (twfe_event, ///
 
 use "$path/JIBS/data/master-stacked-country.dta", clear
 
-drop if region == "Northern Europe" | region == "Western Europe" | region == "Northern Africa" | region=="Australia and New Zealand"
-
-gen log_ch = log(ch)
+gen cash_rev = ch/revt
 
 gen rel_year = relative_year + 4
 
 // Equal Weights 
-reghdfe log_ch treat##b3.rel_year, absorb(i.id i.cohort#i.year) clust(iso)
+reghdfe cash_rev treat##b3.rel_year, absorb(i.id i.cohort#i.year) clust(iso)
 
 estimates store stacked
 
@@ -247,7 +235,7 @@ coefplot (stacked, ///
 	vertical ///
 	yline(0, lcolor(black)) ///
 	xline(4.5, lcolor(gs8) lpattern(dash)) ///
-	ytitle("Log Cash Holdings", size(small)) ///
+	ytitle("Cash / Revenue", size(small)) ///
 	xtitle("Periods Since Populist Leader", size(small)) ///
 	xlabel(1 "-4" 2 "-3" 3 "-2" 4 "-1" 5 "0" 6 "1" 7 "2" 8 "3") ///
 	levels(90) ///
@@ -261,14 +249,12 @@ coefplot (stacked, ///
 
 use "$path/JIBS/data/master-stacked-firm.dta", clear
 
-drop if region == "Northern Europe" | region == "Western Europe" | region == "Northern Africa" | region=="Australia and New Zealand"
-
-gen log_ch = log(ch)
+gen cash_rev = ch/revt
 
 gen rel_year = relative_year + 4
 
 // Equal Weights 
-reghdfe log_ch treat##b3.rel_year, ///
+reghdfe cash_rev treat##b3.rel_year, ///
 	absorb(i.firm_id i.cohort#i.year) ///
 	vce(cluster iso)
 
@@ -294,7 +280,7 @@ coefplot (stacked_firm, ///
 	vertical ///
 	yline(0, lcolor(black)) ///
 	xline(4.5, lcolor(gs8) lpattern(dash)) ///
-	ytitle("Log Cash Holdings", size(small)) ///
+	ytitle("Cash / Revenue", size(small)) ///
 	xtitle("Periods Since Populist Leader", size(small)) ///
 	xlabel(1 "-4" 2 "-3" 3 "-2" 4 "-1" 5 "0" 6 "1" 7 "2" 8 "3") ///
 	levels(90) ///
@@ -308,20 +294,18 @@ coefplot (stacked_firm, ///
 
 use "$path/JIBS/data/master-stacked-firm.dta", clear
 
-drop if region == "Northern Europe" | region == "Western Europe" | region == "Northern Africa" | region=="Australia and New Zealand"
-
-gen log_ch = log(ch)
+gen cash_rev = ch/revt
 gen rel_year = relative_year + 4
 
 tsset firm_id relative_year
 sort firm_id relative_year
 
-cap drop  log_ch_l* _*
+cap drop  cash_rev_l* _*
 
-bysort firm_id (relative_year): gen log_ch_l1 = L1.log_ch
-bysort firm_id (relative_year): gen log_ch_l2 = L2.log_ch
-bysort firm_id (relative_year): gen log_ch_l3 = L3.log_ch
-bysort firm_id (relative_year): gen log_ch_l4 = L4.log_ch
+bysort firm_id (relative_year): gen cash_rev_l1 = L1.cash_rev
+bysort firm_id (relative_year): gen cash_rev_l2 = L2.cash_rev
+bysort firm_id (relative_year): gen cash_rev_l3 = L3.cash_rev
+bysort firm_id (relative_year): gen cash_rev_l4 = L4.cash_rev
 
 levelsof cohort, local(cohorts)
 
@@ -338,7 +322,7 @@ foreach y of local cohorts {
 	cap drop _webal
 	
 	// Calculate Entropy Balance weights for each cohort 
-	qui ebalance treat log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4 /// 
+	ebalance treat cash_rev_l1 cash_rev_l2 cash_rev_l3 cash_rev_l4 /// 
 		if relative_year == 0 & cohort==`y'
 	
 	// Store in ebal variable (this one is just for comparison purposes)
@@ -362,14 +346,14 @@ egen ebal = mean(_ebal), by(firm_id)
 
 /* Match on trends
 cap drop ebal weights
-ebalance treat log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4 ///
+ebalance treat cash_rev_l1 cash_rev_l2 cash_rev_l3 cash_rev_l4 ///
 	if relative_year==0, gen(ebal)
 
 // Extend weights in t-1 to all observations
 egen weights = mean(ebal), by(firm_id)
 */
 
-reghdfe log_ch treat##b3.rel_year [aweight=aw], ///
+reghdfe cash_rev treat##b3.rel_year [aweight=aw], ///
 	absorb(i.firm_id i.cohort#i.year) ///
 	vce(cluster iso)
 
@@ -395,7 +379,7 @@ coefplot (eb_stacked_firm, ///
 	vertical ///
 	yline(0, lcolor(black)) ///
 	xline(4.5, lcolor(gs8) lpattern(dash)) ///
-	ytitle("Log Cash Holdings", size(small)) ///
+	ytitle("Cash / Revenue", size(small)) ///
 	xtitle("Periods Since Populist Leader", size(small)) ///
 	xlabel(1 "-4" 2 "-3" 3 "-2" 4 "-1" 5 "0" 6 "1" 7 "2" 8 "3") ///
 	levels(90) ///

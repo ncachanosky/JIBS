@@ -21,75 +21,10 @@ if "`c(username)'" == "ncachosnky" {
 }
 
 //------------------------------------------------------------------------------
-// 1. Preparation
-//------------------------------------------------------------------------------
-
-use "$path/JIBS/data/funke-ple-clean.dta", clear
-
-// Set panel vars 
-xtset iso year
-
-// Treated dummy == 1 if there's a switch to a populist leader
-// Requires that leader in the last four years is not populist
-gen treat_pop = (pop == 1 & ///
-				L1.pop == 0 & ///
-				L2.pop == 0 & ///
-				L3.pop == 0 & ///
-				L4.pop == 0)
-
-// This command carries the treatment forward from the initial year.
-// It checks if the country was treated in the prior year (treat[_n-1]==1)
-// AND if the leader is still populist in the current year (pop==1).
-bysort iso (year): replace treat_pop = 1 if pop[_n-1] == 1 & pop == 1
-
-// Identify each case of a transition 
-
-cap drop case_start case_chronological_count start_id
-
-xtset iso year
-
-// Step 1: Create a dummy variable for the start of a valid case.
-// This requires 4 years of non-leftist govt (0) followed by 4 years of leftist govt (1).
-gen byte case_start = pop==0 & ///
-						F1.pop==0 & ///
-						F2.pop==0 & ///
-						F3.pop==0 & ///
-						F4.pop==1 & ///
-						F5.pop==1 & ///
-						F6.pop==1 & ///
-						F7.pop==1 
-
-// Step 2: Create a running count of all cases found so far.
-// First, sort by year to ensure the count is chronological.
-sort year iso
-
-// Next, generate the running sum. This variable, 'case_chronological_count',
-// will hold 1 for all rows after the first case starts, 2 after the second, and so on.
-gen long case_chronological_count = sum(case_start)
-
-// Step 3: Pull that count onto the starting year to create a unique ID.
-// This new 'start_id' variable will now contain the unique ID (1, 2, 3...)
-// but *only* on the specific year each case begins. It will be missing everywhere else.
-gen long start_id = case_chronological_count if case_start == 1
-
-// Sort the data back to the order required by xtset
-sort iso year
-
-// Step 4: Propagate the ID across the entire 8-year window for each case.
-// A year's case ID is the most recent 'start_id' seen in the last 8 years.
-// The max() function finds the one non-missing ID in that 8-year moving window.
-gen long case_id = max(start_id, L1.start_id, L2.start_id, L3.start_id, ///
-	L4.start_id, L5.start_id, L6.start_id, L7.start_id)
-
-// Clean up intermediate variables
-drop case_start case_chronological_count start_id
-
-// Save a clean copy of the current data to use as a source
-save "$path/JIBS/data/prep-stacked.dta", replace
-
-//------------------------------------------------------------------------------
 // 2. Loop through each case and append to temp file
 //------------------------------------------------------------------------------
+
+use "$path/JIBS/data/prep-stacked.dta", clear
 
 // Get a list of all unique treatment case IDs to loop over.
 levelsof case_id, local(cases)
@@ -125,18 +60,98 @@ foreach case of local cases {
     // Keep two groups: the treated country itself AND all valid control countries.
     keep if control==1 | case_id == `case'
 
-    // IMPORTANT: Create a new ID to track which case these observations belong to.
+    // IMPORTANT: Create ID to track which cohort observations belong to.
     gen long cohort = `treat_year'
 	
 	// Clean-up 
 	drop tag_*
 	drop if cohort==.
+	
+	gen relative_year = year - `treat_year'
+
+	
+	//--------------------------------------------------------------------------
+	// Merge Compustat for that cohort
+	//--------------------------------------------------------------------------
+	
+	merge 1:m iso year using "$path/JIBS/data/compustat-firm-clean.dta", ///
+		keep(match) nogen
+	
+	egen obs_firm = count(gvkey), by(gvkey iso)
+	
+	keep if obs_firm==8
 
     // Append this group (the treated unit + its controls) to the results file.
     append using `stacked_results'
     save `stacked_results', replace
 }
 
+duplicates drop gvkey iso year cohort, force
+
+//------------------------------------------------------------------------------
+// OPTIONAL: Loop again to get country and firm insights
+//------------------------------------------------------------------------------
+
+// Get a list of all unique treatment case IDs to loop over.
+/*
+levelsof cohort, local(cohorts)
+
+foreach cohort of local cohorts {
+	
+	di "For the `cohort' cohort:"
+	
+	di "Treated countries:"
+	tab country if treat==1 & cohort==`cohort'
+	
+	levelsof country if treat==1 & cohort==`cohort', local(treated)
+	
+	foreach country of local treated {
+		qui distinct year if country=="`country'" & cohort==`cohort'
+		
+		if r(ndistinct) != 8 {
+			
+		// Assure complete panel 
+		di "We have missing years for `country'"
+		break
+		}
+		
+		// Count # Firms 
+		qui distinct gvkey if  country=="`country'" & cohort==`cohort'
+		qui local firms = r(ndistinct)
+		
+		// Flag if any firm has 
+		if r(N) / r(ndistinct) != 8 {
+		di "We have a problem with `country' in cohort `cohort'"
+		break
+		}
+	}
+	
+	di "Controls countries:"
+	tab country if treat==0 & cohort==`cohort'
+	
+	qui levelsof country if treat==0 & cohort==`cohort', local(controls)
+	
+	foreach country of local controls {
+		
+		// Assure complete panel 
+		qui distinct year if country=="`country'" & cohort==`cohort'
+		
+		if r(ndistinct) != 8 {
+		di "We have missing years for `country'"
+		break
+		}
+		
+		// Count # Firms 
+		qui distinct gvkey if country=="`country'" & cohort==`cohort'
+		local firms = r(ndistinct)
+		
+		if r(N) / r(ndistinct) != 8 {
+		di "We have a problem with `country' in cohort `cohort'"
+		break
+		}
+	}
+}
+*/
 //------------------------------------------------------------------------------
 // 3. Finalization
 //------------------------------------------------------------------------------
@@ -146,20 +161,32 @@ use `stacked_results', clear
 
 // Just to be sure
 drop if cohort==.
-duplicates drop iso year cohort, force
-
-// Inspect treated and control
-gen treat = (case_id!=.)
-
-bysort cohort: tab country if treat==1
-bysort cohort: tab country if treat==0
+duplicates drop gvkey iso year cohort, force
 
 // Create cohort-specific information
 egen id = group(iso cohort)
-bysort id (year): gen relative_year = _n - 5
-tab relative_year // check 
+egen firm_id = group(gvkey iso cohort)
+
+// Final Checks 
+egen firm_check = count(gvkey), by(firm_id)
+tab firm_check
+tab relative_year
+
+drop firm_check
+
+gen treat = (case_id!=.)
 
 // Save -4 to 4 panel 
-save "$path/JIBS/data/stacked-cases.dta", replace
+save "$path/JIBS/data/master-stacked-firm.dta", replace
+
+//------------------------------------------------------------------------------
+// 4. Finalization for TWFE Panel 
+//------------------------------------------------------------------------------
+
+duplicates drop gvkey iso year, force // Avoid repeated controls
+
+egen firm_check = count(gvkey), by(gvkey iso year)
+save "$path/JIBS/data/master-clean-twfe-firm.dta", replace
+
 
 

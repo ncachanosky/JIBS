@@ -30,7 +30,7 @@ use "$path/JIBS/data/funke-ple-clean.dta", clear
 xtset iso year
 
 // Set panel obs:
-global pvars "continent region subregion country year independent pop lpop rpop iso"
+global pvars "continent region subregion wb_region country year independent pop lpop rpop iso"
 
 // Merge firm observation counts:
 merge 1:1 iso year using "$path/JIBS/data/compustat-country-clean.dta"

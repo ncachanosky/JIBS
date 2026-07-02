@@ -33,6 +33,12 @@ gen rel_year = relative_year + 4
 distinct iso
 local ndistinct = r(ndistinct)
 
+distinct firm_id if treat==1
+local nt = r(ndistinct)
+
+distinct firm_id if treat==0
+local nc = r(ndistinct)
+
 // Equal Weights 
 reghdfe log_ch treat##b3.rel_year, ///
 	absorb(i.firm_id i.cohort#i.year) ///
@@ -67,8 +73,9 @@ coefplot (e1, ///
 	legend(off) ///
 	name(e1, replace) ///
 	subtitle("Baseline", justification(center) size(small)) ///
-	note("Std. errors adjusted for `ndistinct' clusters", ///
-			justification(center) size(vsmall))
+	note("N(T) `nt' | N(C): `nc'" ///
+		"Std. errors adjusted for `ndistinct' clusters", ///
+			justification(center) size(vsmall)) ///
 	nodraw
 	
 	
@@ -89,6 +96,12 @@ gen rel_year = relative_year + 4
 
 distinct iso
 local ndistinct = r(ndistinct)
+
+distinct firm_id if treat==1
+local nt = r(ndistinct)
+
+distinct firm_id if treat==0
+local nc = r(ndistinct)
 
 // Equal Weights 
 reghdfe log_ch treat##b3.rel_year, ///
@@ -125,8 +138,9 @@ coefplot (e2, ///
 	name(e2, replace) ///
 	subtitle("Excluding regions with no treated", ///
 		justification(center) size(small)) ///
-	note("Std. errors adjusted for `ndistinct' clusters", ///
-			justification(center) size(vsmall))
+	note("N(T) `nt' | N(C): `nc'" ///
+		"Std. errors adjusted for `ndistinct' clusters", ///
+			justification(center) size(vsmall)) ///
 	nodraw
 	
 //------------------------------------------------------------------------------
@@ -155,6 +169,13 @@ gen rel_year = relative_year + 4
 
 distinct iso if treat==0 | lpop==1
 local ndistinct = r(ndistinct)
+
+distinct firm_id if treat==0
+local nc = r(ndistinct)
+
+distinct firm_id if lpop==1
+local nt = r(ndistinct)
+
 
 // Equal Weights 
 reghdfe log_ch lpop##b3.rel_year if treat==0 | lpop==1, ///
@@ -191,12 +212,19 @@ coefplot (e3, ///
 	name(e3, replace) ///
 	subtitle("Left Populists: Excluding regions with no treated", ///
 		justification(center) size(small)) ///
-	note("Std. errors adjusted for `ndistinct' clusters", ///
-			justification(center) size(vsmall))
+	note("N(T) `nt' | N(C): `nc'" ///
+		"Std. errors adjusted for `ndistinct' clusters", ///
+			justification(center) size(vsmall)) ///
 	nodraw
 	
 distinct iso if treat==0 | rpop==1
 local ndistinct = r(ndistinct)
+
+distinct firm_id if treat==0
+	local nc = r(ndistinct)
+
+distinct firm_id if rpop==1
+	local nt = r(ndistinct)
 	
 // Equal Weights 
 reghdfe log_ch rpop##b3.rel_year if treat==0 | rpop==1, ///
@@ -233,8 +261,9 @@ coefplot (e4, ///
 	name(e4, replace) ///
 	subtitle("Right Populists: Excluding regions with no treated", ///
 		justification(center) size(small)) ///
-	note("Std. errors adjusted for `ndistinct' clusters", ///
-			justification(center) size(vsmall))
+	note("N(T) `nt' | N(C): `nc'" ///
+		"Std. errors adjusted for `ndistinct' clusters", ///
+			justification(center) size(vsmall)) ///
 	nodraw
 	
 	
@@ -280,13 +309,17 @@ foreach region of local regions {
 			if relative_year == 0, gen(_ebal)
 			 
 	egen ebal = mean(_ebal), by(firm_id)
-	
-	sum ebal
 
 	local r = subinstr("`region'", " ", "", .)
 	
 	distinct iso
 	local ndistinct = r(ndistinct)
+	
+	distinct firm_id if treat==1
+	local nt = r(ndistinct)
+
+	distinct firm_id if treat==0
+	local nc = r(ndistinct)
 
 	// Equal Weights 
 	qui reghdfe log_ch treat##b3.rel_year [aweight=ebal], ///
@@ -323,8 +356,10 @@ foreach region of local regions {
 		name(e`r', replace) ///
 		subtitle("`region' Sample", ///
 			justification(center) size(small)) ///
-		note("Std. errors adjusted for `ndistinct' clusters", ///
-			justification(center) size(vsmall))
+		note("N(T) `nt' | N(C): `nc'" ///
+		"Std. errors adjusted for `ndistinct' clusters", ///
+			justification(center) size(vsmall)) ///
+		nodraw
 		
 		restore
 }
@@ -335,7 +370,7 @@ graph combine eEasternAsia eEasternEurope eSoutheasternAsia eSouthernEurope, ///
 graph export "$path/JIBS/output/plots/clust-by-region.png", replace
 
 //------------------------------------------------------------------------------
-// By Geographical Region:
+// By World Bank Region:
 //------------------------------------------------------------------------------
 
 use "$path/JIBS/data/master-stacked-firm.dta", clear
@@ -367,14 +402,18 @@ foreach region of local wb_regions {
 			if relative_year == 0, gen(_ebal)
 			 
 	egen ebal = mean(_ebal), by(firm_id)
-	
-	sum ebal
 
 	local r = subinstr("`region'", " ", "", .)
 	
 	distinct iso
 	local ndistinct = r(ndistinct)
+	
+	distinct firm_id if treat==1
+	local nt = r(ndistinct)
 
+	distinct firm_id if treat==0
+	local nc = r(ndistinct)
+	
 	// Equal Weights 
 	qui reghdfe log_ch treat##b3.rel_year [aweight=ebal], ///
 		absorb(i.firm_id i.cohort#i.year) ///
@@ -409,9 +448,11 @@ foreach region of local wb_regions {
 		legend(off) ///
 		name(e`r', replace) ///
 		subtitle("World Bank `region' Sample", ///
-			justification(center) size(small))
-		note("Std. errors adjusted for `ndistinct' clusters", ///
-			justification(center) size(vsmall))
+			justification(center) size(small)) ///
+		note("N(T) `nt' | N(C): `nc'" ///
+		"Std. errors adjusted for `ndistinct' clusters", ///
+			justification(center) size(vsmall)) ///
+		nodraw
 		
 		restore
 }

@@ -1,0 +1,15 @@
+/output/summary/node_modules
+*.json
+*.js
+.DS_Store
+output/summary/_fig_event.png
+output/summary/_fig_event_cr.png
+output/summary/_fig_twfe.png
+output/summary/_fig_twfe_cr.png
+output/summary/populism-cash-results-summary.docx
+output/summary/summary.docx
+output/.DS_Store
+data/.DS_Store
+.DS_Store
+code/.DS_Store
+data/.DS_Store

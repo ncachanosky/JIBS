@@ -111,7 +111,7 @@ Not-parallel trends... unless I'm doing something wrong.
 // Equal Weights 
 reghdfe log_ch treat##b3.rel_year if euro == 1, ///
 	absorb(i.firm_id i.cohort#i.year) ///
-	vce(cluster iso)
+	vce(robust)
 	
 	distinct firm_id if treat==1
 	local nt = r(ndistinct)
@@ -154,7 +154,7 @@ coefplot (e1, ///
 // Equal Weights 
 reghdfe log_ch treat##b3.rel_year if euro == 0, ///
 	absorb(i.firm_id i.cohort#i.year) ///
-	vce(cluster iso)
+	vce(robust)
 	
 	distinct firm_id if treat==1
 	local nt = r(ndistinct)

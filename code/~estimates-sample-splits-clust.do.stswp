@@ -389,9 +389,7 @@ foreach region of local wb_regions {
 	local nc = r(ndistinct)
 
 	// Equal Weights 
-	qui reghdfe log_ch treat##b3.rel_year, ///
-		absorb(i.firm_id i.cohort#i.year) ///
-		vce(cluster iso)
+	qui 
 
 	estimates store e`r'
 

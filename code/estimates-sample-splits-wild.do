@@ -17,29 +17,38 @@ if "`c(username)'" == "jpmvbastos" {
 	global path "/Users/jpmvbastos/Documents/GitHub"
 }
 if "`c(username)'" == "ncachosnky" {
-	global path "C:/Users/ncachanosky/OneDrive/Research/Working Papers/paper-JIBS"
+	global path "C:\Users\ncachanosky\OneDrive\Research\GitHub"
 }
 	
 //------------------------------------------------------------------------------
 // 1. Stacked DID Event Study - Baseline
 //------------------------------------------------------------------------------
 
-use "$path/JIBS/data/master-stacked-firm.dta", clear
+*use "$path/JIBS/data/master-stacked-firm.dta", clear
+use "C:\Users\ncachanosky\OneDrive\Research\GitHub\JIBS\data\master-stacked-firm.dta", clear
 
 gen log_ch = log(ch)
 
 gen rel_year = relative_year + 4
 
-// Equal Weights 
-reghdfe log_ch treat##b3.rel_year, ///
-	absorb(i.firm_id i.cohort#i.year) ///
-	vce(robust)
-	
-	distinct firm_id if treat==1
-	local nt = r(ndistinct)
+distinct iso
+local ndistinct = r(ndistinct)
 
-	distinct firm_id if treat==0
-	local nc = r(ndistinct)
+distinct firm_id if treat==1
+local nt = r(ndistinct)
+
+distinct firm_id if treat==0
+local nc = r(ndistinct)
+
+egen cy = group(cohort year)
+
+// Equal Weights 
+wildboot areg log_ch treat##b3.rel_year i.cy, ///
+	absorb(firm_id) ///
+	coef(1.treat#0.rel_year 1.treat#1.rel_year ///
+		1.treat#2.rel_year 1.treat#4.rel_year 1.treat#5.rel_year ///
+		   1.treat#6.rel_year 1.treat#7.rel_year ) ///
+	reps(10) cluster(iso)
 
 estimates store e1
 
@@ -70,6 +79,9 @@ coefplot (e1, ///
 	legend(off) ///
 	name(e1, replace) ///
 	subtitle("Baseline", justification(center) size(small)) ///
+	note("N(T) `nt' | N(C): `nc'" ///
+		"Std. errors adjusted for `ndistinct' clusters", ///
+			justification(center) size(vsmall)) ///
 	nodraw
 	
 	
@@ -77,7 +89,7 @@ coefplot (e1, ///
 // 2. Stacked DID Event Study - Excluding regions with no treated cases
 //------------------------------------------------------------------------------
 	
-use "$path/JIBS/data/master-stacked-firm.dta", clear
+use "C:\Users\ncachanosky\OneDrive\Research\GitHub\JIBS\data\master-stacked-firm.dta", clear
 
 drop if region == "Northern Europe" ///
 	| region == "Western Europe" ///
@@ -88,16 +100,24 @@ gen log_ch = log(ch)
 
 gen rel_year = relative_year + 4
 
-	distinct firm_id if treat==1
-	local nt = r(ndistinct)
+distinct iso
+local ndistinct = r(ndistinct)
 
-	distinct firm_id if treat==0
-	local nc = r(ndistinct)
+distinct firm_id if treat==1
+local nt = r(ndistinct)
+
+distinct firm_id if treat==0
+local nc = r(ndistinct)
+
+egen cy = group(cohort year)
 
 // Equal Weights 
-reghdfe log_ch treat##b3.rel_year, ///
-	absorb(i.firm_id i.cohort#i.year) ///
-	vce(robust)
+wildboot areg log_ch treat##b3.rel_year i.cy, ///
+	absorb(firm_id) ///
+	coef(1.treat#0.rel_year 1.treat#1.rel_year ///
+		1.treat#2.rel_year 1.treat#4.rel_year 1.treat#5.rel_year ///
+		   1.treat#6.rel_year 1.treat#7.rel_year ) ///
+	reps(10) cluster(iso)
 
 estimates store e2
 
@@ -129,13 +149,16 @@ coefplot (e2, ///
 	name(e2, replace) ///
 	subtitle("Excluding regions with no treated", ///
 		justification(center) size(small)) ///
+	note("N(T) `nt' | N(C): `nc'" ///
+		"Std. errors adjusted for `ndistinct' clusters", ///
+			justification(center) size(vsmall)) ///
 	nodraw
 	
 //------------------------------------------------------------------------------
 // 3. Stacked DID Event Study - Left 
 //------------------------------------------------------------------------------
 	
-use "$path/JIBS/data/master-stacked-firm.dta", clear
+use "C:\Users\ncachanosky\OneDrive\Research\GitHub\JIBS\data\master-stacked-firm.dta", clear
 
 drop if region == "Northern Europe" ///
 	| region == "Western Europe" ///
@@ -155,16 +178,24 @@ gen log_ch = log(ch)
 
 gen rel_year = relative_year + 4
 
+distinct iso if treat==0 | lpop==1
+local ndistinct = r(ndistinct)
+
 distinct firm_id if treat==0
 local nc = r(ndistinct)
 
 distinct firm_id if lpop==1
 local nt = r(ndistinct)
 
+egen cy = group(cohort year)
+
 // Equal Weights 
-reghdfe log_ch lpop##b3.rel_year if treat==0 | lpop==1, ///
-	absorb(i.firm_id i.cohort#i.year) ///
-	vce(robust)
+wildboot areg log_ch treat##b3.rel_year i.cy, ///
+	absorb(firm_id) ///
+	coef(1.treat#0.rel_year 1.treat#1.rel_year ///
+		1.treat#2.rel_year 1.treat#4.rel_year 1.treat#5.rel_year ///
+		   1.treat#6.rel_year 1.treat#7.rel_year ) ///
+	reps(10) cluster(iso)
 
 estimates store e3
 
@@ -196,15 +227,14 @@ coefplot (e3, ///
 	name(e3, replace) ///
 	subtitle("Left Populists: Excluding regions with no treated", ///
 		justification(center) size(small)) ///
-		note("N(T) `nt' | N(C): `nc'" ///
-		"Robust standard errors", ///
+	note("N(T) `nt' | N(C): `nc'" ///
+		"Std. errors adjusted for `ndistinct' clusters", ///
 			justification(center) size(vsmall)) ///
 	nodraw
 	
-//------------------------------------------------------------------------------
-// 4. Stacked DID Event Study - Right
-//------------------------------------------------------------------------------
-	
+distinct iso if treat==0 | rpop==1
+local ndistinct = r(ndistinct)
+
 distinct firm_id if treat==0
 	local nc = r(ndistinct)
 
@@ -212,9 +242,12 @@ distinct firm_id if rpop==1
 	local nt = r(ndistinct)
 	
 // Equal Weights 
-reghdfe log_ch rpop##b3.rel_year if treat==0 | rpop==1, ///
-	absorb(i.firm_id i.cohort#i.year) ///
-	vce(robust)
+wildboot areg log_ch treat##b3.rel_year i.cy, ///
+	absorb(firm_id) ///
+	coef(1.treat#0.rel_year 1.treat#1.rel_year ///
+		1.treat#2.rel_year 1.treat#4.rel_year 1.treat#5.rel_year ///
+		   1.treat#6.rel_year 1.treat#7.rel_year ) ///
+	reps(10) cluster(iso)
 
 estimates store e4
 
@@ -247,20 +280,21 @@ coefplot (e4, ///
 	subtitle("Right Populists: Excluding regions with no treated", ///
 		justification(center) size(small)) ///
 	note("N(T) `nt' | N(C): `nc'" ///
-		"Robust standard errors", ///
+		"Std. errors adjusted for `ndistinct' clusters", ///
 			justification(center) size(vsmall)) ///
-		nodraw
+	nodraw
+	
 	
 graph combine e1 e2 e3 e4, xcommon rows(2)
 
-graph export "$path/JIBS/output/plots/robust-baseline-left-right.png", replace
+graph export "C:\Users\ncachanosky\OneDrive\Research\GitHub\JIBS\output\plots\wild-baseline-left-right.png", replace
 
 
 //------------------------------------------------------------------------------
 // By Geographical Region:
 //------------------------------------------------------------------------------
 
-use "$path/JIBS/data/master-stacked-firm.dta", clear
+use "C:\Users\ncachanosky\OneDrive\Research\GitHub\JIBS\data\master-stacked-firm.dta", clear
 
 keep if inlist(region, "Eastern Asia", "Eastern Europe", "South-eastern Asia", "Southern Europe") 
 
@@ -270,6 +304,8 @@ gen log_ch = log(ch)
 gen rel_year = relative_year + 4
 
 levelsof region, local(regions)
+
+egen cy = group(cohort year)
 
 foreach region of local regions {
 	
@@ -293,10 +329,11 @@ foreach region of local regions {
 			if relative_year == 0, gen(_ebal)
 			 
 	egen ebal = mean(_ebal), by(firm_id)
-	
-	sum ebal
 
 	local r = subinstr("`region'", " ", "", .)
+	
+	distinct iso
+	local ndistinct = r(ndistinct)
 	
 	distinct firm_id if treat==1
 	local nt = r(ndistinct)
@@ -305,9 +342,13 @@ foreach region of local regions {
 	local nc = r(ndistinct)
 
 	// Equal Weights 
-	qui reghdfe log_ch treat##b3.rel_year [aweight=ebal], ///
-		absorb(i.firm_id i.cohort#i.year) ///
-		vce(robust)
+	qui wildboot areg log_ch treat##b3.rel_year i.cy, ///
+		absorb(firm_id) ///
+		coef(1.treat#0.rel_year 1.treat#1.rel_year ///
+			1.treat#2.rel_year 1.treat#4.rel_year 1.treat#5.rel_year ///
+			1.treat#6.rel_year 1.treat#7.rel_year ) ///
+		reps(10) cluster(iso)
+
 
 	estimates store e`r'
 
@@ -340,7 +381,7 @@ foreach region of local regions {
 		subtitle("`region' Sample", ///
 			justification(center) size(small)) ///
 		note("N(T) `nt' | N(C): `nc'" ///
-		"Robust standard errors", ///
+		"Std. errors adjusted for `ndistinct' clusters", ///
 			justification(center) size(vsmall)) ///
 		nodraw
 		
@@ -350,18 +391,20 @@ foreach region of local regions {
 graph combine eEasternAsia eEasternEurope eSoutheasternAsia eSouthernEurope, ///
 	xcommon rows(2)
 
-graph export "$path/JIBS/output/plots/robust-by-region.png", replace
+graph export "C:\Users\ncachanosky\OneDrive\Research\GitHub\JIBS\output\plots\wild-by-region.png", replace
 
 //------------------------------------------------------------------------------
 // By World Bank Region:
 //------------------------------------------------------------------------------
 
-use "$path/JIBS/data/master-stacked-firm.dta", clear
+use "C:\Users\ncachanosky\OneDrive\Research\GitHub\JIBS\data\master-stacked-firm.dta", clear
 
 gen log_ch = log(ch)
 gen rel_year = relative_year + 4
 
 levelsof wb_region, local(wb_regions)
+
+egen cy = group(cohort year)
 
 foreach region of local wb_regions {
 	
@@ -388,16 +431,22 @@ foreach region of local wb_regions {
 
 	local r = subinstr("`region'", " ", "", .)
 	
+	distinct iso
+	local ndistinct = r(ndistinct)
+	
 	distinct firm_id if treat==1
 	local nt = r(ndistinct)
 
 	distinct firm_id if treat==0
 	local nc = r(ndistinct)
-
+	
 	// Equal Weights 
-	qui reghdfe log_ch treat##b3.rel_year [aweight=ebal], ///
-		absorb(i.firm_id i.cohort#i.year) ///
-		vce(robust)
+	qui wildboot areg log_ch treat##b3.rel_year i.cy, ///
+		absorb(firm_id) ///
+		coef(1.treat#0.rel_year 1.treat#1.rel_year ///
+			1.treat#2.rel_year 1.treat#4.rel_year 1.treat#5.rel_year ///
+			1.treat#6.rel_year 1.treat#7.rel_year ) ///
+		reps(10) cluster(iso)
 
 	estimates store e`r'
 
@@ -430,7 +479,7 @@ foreach region of local wb_regions {
 		subtitle("World Bank `region' Sample", ///
 			justification(center) size(small)) ///
 		note("N(T) `nt' | N(C): `nc'" ///
-		"Robust standard errors", ///
+		"Std. errors adjusted for `ndistinct' clusters", ///
 			justification(center) size(vsmall)) ///
 		nodraw
 		
@@ -440,7 +489,7 @@ foreach region of local wb_regions {
 graph combine eHighincome eLowermiddleincome eUppermiddleincome, ///
 	xcommon rows(2)
 
-graph export "$path/JIBS/output/plots/robust-by-wb-region.png", replace
+graph export "C:\Users\ncachanosky\OneDrive\Research\GitHub\JIBS\output\plots\wild-by-wb-region.png", replace
 
 
 

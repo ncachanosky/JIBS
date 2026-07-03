@@ -71,6 +71,7 @@ replace euro = 1 if iso3 == "LUX" & year >= 1999
 replace euro = 1 if iso3 == "NLD" & year >= 1999
 replace euro = 1 if iso3 == "PRT" & year >= 1999
 replace euro = 1 if iso3 == "ESP" & year >= 1999
+/*
 replace euro = 1 if iso3 == "GRC" & year >= 2001
 replace euro = 1 if iso3 == "SVN" & year >= 2007
 replace euro = 1 if iso3 == "CYP" & year >= 2008
@@ -79,7 +80,7 @@ replace euro = 1 if iso3 == "SVK" & year >= 2009
 replace euro = 1 if iso3 == "EST" & year >= 2011
 replace euro = 1 if iso3 == "LVA" & year >= 2014
 replace euro = 1 if iso3 == "LTU" & year >= 2015
-
+*/
 label variable euro "Eurozone member (formal, time-varying)"
 
 * Unilateral / non-member euro users -- kept separate by default
@@ -90,6 +91,36 @@ replace euro_unilateral = 1 if inlist(iso3, "AND","MCO","SMR","VAT") // microsta
 
 label variable euro_unilateral "Uses Euro without formal ECB/Eurosystem membership"
 
+* ==============================================================================
+* 3b. DROP SWITCHER COUNTRIES (stable euro/non-euro comparison only)
+* ==============================================================================
+* A "switcher" is a country whose euro status is not constant across the
+* sample period actually used in estimation. Flagging at the country level
+* (not firm/event-window level) because a switcher contaminates the
+* always/never comparison for every firm in that country, not just the
+* firms whose own event window straddles the adoption year.
+
+/*
+bys iso3: egen euro_min = min(euro)
+bys iso3: egen euro_max = max(euro)
+gen byte euro_switcher = (euro_min != euro_max)
+
+* Inspect before dropping -- this is where you decide if you can afford it
+tab iso3 euro_switcher
+distinct iso3 if euro_switcher == 1
+di "Switcher countries: " r(ndistinct)
+
+distinct firm_id
+local n_before = r(ndistinct)
+
+drop if euro_switcher == 1
+
+distinct firm_id
+local n_after = r(ndistinct)
+di "Firms dropped: " `n_before' - `n_after' " (" `n_before' " -> " `n_after' ")"
+
+drop euro_min euro_max euro_switcher
+*/
 
 * ==============================================================================
 * 4. SAVE
@@ -111,7 +142,7 @@ Not-parallel trends... unless I'm doing something wrong.
 // Equal Weights 
 reghdfe log_ch treat##b3.rel_year if euro == 1, ///
 	absorb(i.firm_id i.cohort#i.year) ///
-	vce(robust)
+	vce(cluster iso)
 	
 	distinct firm_id if treat==1
 	local nt = r(ndistinct)
@@ -154,7 +185,7 @@ coefplot (e1, ///
 // Equal Weights 
 reghdfe log_ch treat##b3.rel_year if euro == 0, ///
 	absorb(i.firm_id i.cohort#i.year) ///
-	vce(robust)
+	vce(cluster iso)
 	
 	distinct firm_id if treat==1
 	local nt = r(ndistinct)
@@ -203,6 +234,8 @@ coefplot (e1, ///
 NOTE
 Two regressions, one for Euro zone and for non-Euro zone.
 Not-parallel trends... unless I'm doing something wrong.
+I think the issue is that all euro countries switch in starting in 1999.
+
 */
 
 

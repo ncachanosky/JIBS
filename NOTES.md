@@ -529,3 +529,46 @@ WCB CI midpoint vs the weighted `b_w` and unweighted `b_unw`, benchmarked to the
 intervals are centered on the weighted point estimates, and the skew is a real finite-sample
 feature of the post-treatment estimates. No fix needed. (Diagnostic: scratch `diag_weights.do`,
 not committed.)
+
+---
+
+## 11. Polity2 merge into `master-stacked-firm.dta` — coverage / unmatched country-years
+
+**What.** `code/build-clean-window-firm.do` now merges `data/polity-clean.dta` (country-year:
+`iso` str3, `year`, `polity2`, `cow_code`) onto the stacked firm panel just before the save, as
+`merge m:1 iso year ... keep(master match) nogen`.
+
+**Key-type gotcha (why it's not a literal one-liner).** In the firm panel `iso` is an **encoded
+numeric** (`long`, value label = alpha-3: 1→ARG, 2→AUS, …, 58→USA), whereas in `polity-clean`
+`iso` is the `str3` code itself. A plain `merge m:1 iso year` errors with `r(106)` (numeric vs
+string key). Bridged by decoding the panel key to a string, merging, then restoring the numeric:
+
+```stata
+rename iso iso_n
+decode iso_n, gen(iso)
+merge m:1 iso year using "$path/JIBS/data/polity-clean.dta", keep(master match) nogen
+drop iso
+rename iso_n iso
+```
+
+**Merge result:** 693,728 matched, 37,648 unmatched-from-master (kept, `polity2 == .`), 0 from using.
+
+**The 37,648 unmatched rows are exactly two disjoint causes — no other gaps exist:**
+
+1. **Edge years 2019 & 2020 (≈73% of unmatched).** Polity5's series ends in **2018**, so every
+   firm-observation dated 2019 or 2020 is unmatched. For all 36 non-excluded countries below, the
+   *only* missing cells are 2019/2020 — nothing pre-2019.
+2. **Countries Polity excludes entirely (all years 1995–2020):** **Iceland** (10,328 obs, 100%)
+   and **Malta** (88 obs, 100%) — both below Polity's population cutoff, absent from the series.
+   These two account for *all* pre-2019 unmatched rows.
+
+**All 38 countries with any unmatched rows:** Australia, Austria, Belgium, Canada, Chile, China,
+Colombia, Croatia, Cyprus, Czech Republic, Denmark, Egypt, Estonia, Finland, France, Germany,
+**Iceland**, Ireland, Japan, Latvia, Lithuania, Luxembourg, Malaysia, **Malta**, New Zealand,
+Norway, Peru, Portugal, Romania, Russia, Slovenia, South Korea, Spain, Sweden, Switzerland,
+Taiwan, Thailand, Uruguay. (Large per-country totals — Finland 5,858; Thailand 6,728 — just
+reflect firm counts in the two edge years, not extra year gaps.)
+
+**If fuller coverage is wanted:** the only fixable gap is the 2019–2020 tail, which needs a source
+extending past Polity5's 2018 end (e.g. substitute V-Dem for those years). Iceland/Malta cannot be
+recovered from Polity at all.

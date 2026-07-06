@@ -35,6 +35,11 @@ save `stacked_results', emptyok
 
 // Now, loop through each case ID you just stored in the local macro `cases`.
 foreach case of local cases {
+	
+	//--------------------------------------------------------------------------
+	// DONT CHANGE THIS BLOCK -- KEEP TREATED CASES CONSTANT
+	//--------------------------------------------------------------------------
+	
     // In each iteration, start with a fresh copy of the original data.
     use "$path/JIBS/data/prep-stacked.dta", clear
 
@@ -68,7 +73,16 @@ foreach case of local cases {
 	drop if cohort==.
 	
 	gen relative_year = year - `treat_year'
+	
+	//--------------------------------------------------------------------------
+	// DONT CHANGE ABOVE THIS BLOCK -- KEEP TREATED CASES CONSTANT
+	//--------------------------------------------------------------------------
 
+	// TO CREATE SHORTER PANELS IN TERMS OF FIRMS, CHANGE FROM HERE TO THE END 
+	// OF THE LOOP
+	
+	// For instance, for -2,-1, 0, 1
+	* keep if relative_year >= -2 & relative_year <=1
 	
 	//--------------------------------------------------------------------------
 	// Merge Compustat for that cohort
@@ -78,8 +92,8 @@ foreach case of local cases {
 		keep(match) nogen
 	
 	egen obs_firm = count(gvkey), by(gvkey iso)
-	
-	keep if obs_firm==8
+	// ADJUST THIS COUNT TO THE NUMBER OF YEAR IN PANEL
+	keep if obs_firm==8 
 
     // Append this group (the treated unit + its controls) to the results file.
     append using `stacked_results'
@@ -175,6 +189,13 @@ tab relative_year
 drop firm_check
 
 gen treat = (case_id!=.)
+
+// Merge in Polity2 scores (country-year level; master iso is encoded alpha-3, polity iso is str3)
+rename iso iso_n
+decode iso_n, gen(iso)
+merge m:1 iso year using "$path/JIBS/data/polity-clean.dta", keep(master match) nogen
+drop iso
+rename iso_n iso
 
 // Save -4 to 4 panel 
 save "$path/JIBS/data/master-stacked-firm.dta", replace

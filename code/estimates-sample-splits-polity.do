@@ -346,9 +346,15 @@ foreach region of local regions {
 	bysort firm_id (relative_year): gen `v'_l3 = L3.`v'
 	bysort firm_id (relative_year): gen `v'_l4 = L4.`v'
 	}
+	
+	if "`region'"=="Americas"{
+		local tolerance = "tolerance(3.07866715)"
+	} 
+	else local tolerance ""
+	
 	// entropy-balance weights
 	ebalance treat *_l1 *_l2 *_l3 *_l4 ///
-		if relative_year == 0, gen(_ebal)
+		if relative_year == 0, gen(_ebal) `tolerance'
 	egen ebal = mean(_ebal), by(firm_id)
 
 	local r = subinstr("`region'", " ", "", .)
@@ -702,6 +708,6 @@ twoway (rcap hi lo xpos if arm==1, lcolor(midblue)) ///
 
 restore
 
-graph combine eDem eTrans, ycommon rows(1)
+graph combine eDem eTrans, rows(2) xcommon xsize(7) ysize(10)
 graph export "$path/JIBS/output/plots/wild-by-democratic.png", replace
 

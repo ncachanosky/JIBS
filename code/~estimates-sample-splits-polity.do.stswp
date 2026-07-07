@@ -702,6 +702,6 @@ twoway (rcap hi lo xpos if arm==1, lcolor(midblue)) ///
 
 restore
 
-graph combine eDem eTrans, ycommon rows(1)
+graph combine eDem eTrans, rows(2) xcommon xsize(7) ysize(10)
 graph export "$path/JIBS/output/plots/wild-by-democratic.png", replace
 

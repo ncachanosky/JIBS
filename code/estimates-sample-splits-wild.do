@@ -51,6 +51,7 @@ bysort firm_id (relative_year): gen log_ch_l1 = L1.log_ch
 bysort firm_id (relative_year): gen log_ch_l2 = L2.log_ch
 bysort firm_id (relative_year): gen log_ch_l3 = L3.log_ch
 bysort firm_id (relative_year): gen log_ch_l4 = L4.log_ch
+
 ebalance treat log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4 if relative_year == 0, gen(_ebal)
 egen ebal = mean(_ebal), by(firm_id)
 

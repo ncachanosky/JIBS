@@ -378,7 +378,7 @@ foreach region of local regions {
 	postfile `pf' double xpos double b double lo double hi byte phase using "`res'", replace
 	foreach k of numlist 0 1 2 4 5 6 7 {
 		local b = _b[d`k']
-		boottest d`k', weighttype(webb) level(90) nograph
+		boottest d`k', weighttype(webb) reps($reps) level(90) nograph
 		matrix ci = r(CI)
 		local phase = (`k' >= 4)
 		post `pf' (`k' + 1) (`b') (ci[1,1]) (ci[rowsof(ci),colsof(ci)]) (`phase')
@@ -468,7 +468,7 @@ foreach region of local wb_regions {
 	postfile `pf' double xpos double b double lo double hi byte phase using "`res'", replace
 	foreach k of numlist 0 1 2 4 5 6 7 {
 		local b = _b[d`k']
-		qui boottest d`k', weighttype(webb) level(90) nograph
+		qui boottest d`k', weighttype(webb) reps($reps) level(90) nograph
 		matrix ci = r(CI)
 		local phase = (`k' >= 4)
 		post `pf' (`k' + 1) (`b') (ci[1,1]) (ci[rowsof(ci),colsof(ci)]) (`phase')
@@ -679,7 +679,7 @@ foreach arm in A B {
     local armnum = cond("`arm'"=="A", 1, 2)
     foreach k of numlist 0 1 2 4 5 6 7 {
         local b = _b[d`arm'`k']
-        qui boottest d`arm'`k', weighttype(webb) level(90) nograph
+        qui boottest d`arm'`k', weighttype(webb) reps($reps) level(90) nograph
         matrix ci = r(CI)
         local phase = (`k' >= 4)
         post `pf' (`k' + 1 + `off') (`b') (ci[1,1]) (ci[rowsof(ci),colsof(ci)]) (`armnum') (`phase')

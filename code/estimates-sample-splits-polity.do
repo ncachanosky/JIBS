@@ -115,9 +115,9 @@ restore
 use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm.dta", replace
 
 drop if region == "Northern Europe" ///
-	| region == "Western Europe" ///
-	| region == "Northern Africa" ///
-	| region=="Australia and New Zealand"
+	  | region == "Western Europe"  ///
+	  | region == "Northern Africa" ///
+	  | region == "Australia and New Zealand"
 
 gen log_ch = log(ch)
 gen rel_year = relative_year + 4
@@ -186,9 +186,9 @@ restore
 use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm.dta", replace
 
 drop if region == "Northern Europe" ///
-	| region == "Western Europe" ///
-	| region == "Northern Africa" ///
-	| region=="Australia and New Zealand"
+	  | region == "Western Europe"  ///
+	  | region == "Northern Africa" ///
+	  | region == "Australia and New Zealand"
 
 egen tag_left = total(lpop) if treat==1, by(firm_id)
 egen tag_right = total(rpop) if treat==1, by(firm_id)
@@ -325,10 +325,10 @@ graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/
 * use "$path/JIBS/data/master-stacked-firm.dta", clear
 use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm.dta", replace
 
-drop if region == "Northern Europe" ///
-	| region == "Western Europe" ///
-	| continent == "Africa" ///
-	| region=="Australia and New Zealand"
+drop if region    == "Northern Europe" ///
+	  | region    == "Western Europe"  ///
+  	  | continent == "Africa"          ///
+	  | region    == "Australia and New Zealand"
 
 gen log_ch = log(ch)
 gen rel_year = relative_year + 4
@@ -337,12 +337,14 @@ levelsof continent, local(regions)
 
 egen cy = group(cohort year)
 
+local ok_regions ""									// NC: Added
+
 foreach region of local regions {
 
 	preserve
 
 	keep if continent=="`region'"
-
+	
 	cap drop  `v'_l* _ebal ebal
 
 	tsset firm_id relative_year
@@ -359,10 +361,22 @@ foreach region of local regions {
 	else local tolerance ""
 	
 	// entropy-balance weights
-	ebalance treat *_l1 *_l2 *_l3 *_l4 ///
+	capture noisily ebalance treat *_l1 *_l2 *_l3 *_l4 ///
 		if relative_year == 0, gen(_ebal) `tolerance'
+	capture confirm variable _ebal
+	if _rc != 0 {
+		di as error "ebalance failed to converge (no _ebal created) for region: `region'"
+		restore
+		continue
+	}
+*	ebalance treat *_l1 *_l2 *_l3 *_l4 ///					NC: Commented
+*		if relative_year == 0, gen(_ebal) `tolerance'		NC: Commented
 	egen ebal = mean(_ebal), by(firm_id)
 
+	tab treat if relative_year==0
+	sum polity2_l1 if relative_year==0 & treat==1
+	sum polity2_l1 if relative_year==0 & treat==0
+	
 	local r = subinstr("`region'", " ", "", .)
 
 	distinct iso
@@ -407,10 +421,12 @@ foreach region of local regions {
 		note(`notearg', justification(left) size(vsmall)) ///
 		name(e`r', replace) nodraw
 
+	local ok_regions "`ok_regions' e`r'"
+		
 	restore
 }
 
-graph combine eAmericas eEurope eAsia, ///
+graph combine `ok_regions', ///
 	xcommon ycommon rows(1)
 *graph export "$path/JIBS/output/plots/wild-by-continent-polity.png", replace
 graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-by-continent-polity.png", replace
@@ -426,9 +442,9 @@ gen log_ch = log(ch)
 gen rel_year = relative_year + 4
 
 gen _wb_region = ""
-replace _wb_region = "High Income" if wb_region == "High income"
-replace _wb_region = "Middle Income" if wb_region=="Lower middle income" ///
-									  | wb_region=="Upper middle income"
+replace _wb_region = "High Income"   if wb_region == "High income"
+replace _wb_region = "Middle Income" if wb_region == "Lower middle income" ///
+									  | wb_region == "Upper middle income"
 
 levelsof _wb_region, local(wb_regions)
 
@@ -673,6 +689,7 @@ areg log_ch dA0 dA1 dA2 dA4 dA5 dA6 dA7 ///
                 i.cy [aweight=ebal], absorb(firm_id) cluster(iso)	// NC: Added `[aweight=ebal]'
 
 distinct iso 														// NC: Added this line
+local ncl = r(ndistinct)											// NC: Added this line
 distinct firm_id if groupA==1
 local ntA = r(ndistinct)
 distinct firm_id if groupB==1
@@ -698,6 +715,7 @@ foreach arm in A B {
 }
 postclose `pf'
 
+preserve		// NC: Added
 local notearg `""`ntA' populist-only, `ntB' populist+non-democratic, and `nc' control firms" "Wild cluster bootstrap standard errors adjusted for `ncl' clusters.""'
 
 use "`res'", clear

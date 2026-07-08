@@ -354,15 +354,29 @@ foreach region of local regions {
 	bysort firm_id (relative_year): gen `v'_l3 = L3.`v'
 	bysort firm_id (relative_year): gen `v'_l4 = L4.`v'
 	}
-	
+
 	if "`region'"=="Americas"{
-		local tolerance = "tolerance(3.07866715)"
-	} 
-	else local tolerance ""
+		// polity2_l1 has near-zero variance in the Americas treated group
+		// (see diagnostics from `sum polity2_l1 if relative_year==0 & treat==1`);
+		// entropy balance on polity2 lags is not well identified here, so
+		// Americas balances on log_ch pre-trends only, matching wild.do.
+		local balancevars "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4"
+	}
+	else {
+		local balancevars "*_l1 *_l2 *_l3 *_l4"
+	}
+	
+*	if "`region'"=="Americas"{								NC: Commented
+*		local tolerance = "tolerance(3.07866715)"			NC: Commented
+*	} 														NC: Commented
+*	else local tolerance ""									NC: Commented
 	
 	// entropy-balance weights
-	capture noisily ebalance treat *_l1 *_l2 *_l3 *_l4 ///
-		if relative_year == 0, gen(_ebal) `tolerance'
+	capture noisily ebalance treat `balancevars' ///		NC: Added
+		if relative_year == 0, gen(_ebal)				 // NC: Added
+		
+*	capture noisily ebalance treat *_l1 *_l2 *_l3 *_l4 ///  NC: Commented
+*		if relative_year == 0, gen(_ebal) `tolerance'		NC: Commented
 	capture confirm variable _ebal
 	if _rc != 0 {
 		di as error "ebalance failed to converge (no _ebal created) for region: `region'"

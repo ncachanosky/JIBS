@@ -596,7 +596,7 @@ di as result "Right populists: pooled post-treatment ATT"
 boottest {post}, weighttype(webb) reps($reps) level(90) nograph
 graph combine e1 e2 e3 e4, xcommon rows(2)
 * graph export "$path/JIBS/output/plots/wild-baseline-left-right-polity.png", replace
-graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-baseline-left-right-polity.png", replace
+graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-baseline-left-right-polity--ebalance-restricted.png", replace
 //------------------------------------------------------------------------------
 // By Geographical Region:
 //------------------------------------------------------------------------------
@@ -618,7 +618,7 @@ qui drop if region    == "Northern Europe" ///
 	  | region    == "Australia and New Zealand"
 */
 qui drop if region    == "Australia and New Zelanad" ///
-		  | continent == "Africa" | continent == "Oceania" | continent == "Americ"
+		  | continent == "Africa" | continent == "Oceania" | continent == "Americas"
 qui gen log_ch = log(ch)
 qui gen rel_year = relative_year + 4
 qui levelsof continent, local(regions)
@@ -768,7 +768,7 @@ foreach region of local regions {
 graph combine `ok_regions', ///
 	xcommon ycommon rows(1)
 *graph export "$path/JIBS/output/plots/wild-by-continent-polity.png", replace
-graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-by-continent-polity.png", replace
+graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-by-continent-polity--ebalance-restricted.png", replace
 //------------------------------------------------------------------------------
 // By World Bank Region:
 //------------------------------------------------------------------------------
@@ -909,7 +909,7 @@ foreach region of local wb_regions {
 graph combine eHighIncome eMiddleIncome, ///
 	xcommon ycommon rows(1)
 * graph export "$path/JIBS/output/plots/wild-by-wb-region-polity.png", replace
-graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-by-wb-region-polity.png", replace
+graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-by-wb-region-polity--ebalance-restricted.png", replace
 //------------------------------------------------------------------------------
 // By Democracy/Autocracy
 //------------------------------------------------------------------------------
@@ -1184,7 +1184,7 @@ restore
 robustness_excl "Transitioning sample" "Thailand"
 graph combine eDem eTrans, rows(2) xcommon xsize(7) ysize(10)
 *graph export "$path/JIBS/output/plots/wild-by-democratic.png", replace
-graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-by-democratic.png", replace
+graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-by-democratic--ebalance-restricted.png", replace
 //------------------------------------------------------------------------------
 // Runtime report
 //------------------------------------------------------------------------------

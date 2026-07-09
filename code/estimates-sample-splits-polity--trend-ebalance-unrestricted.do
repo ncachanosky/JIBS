@@ -36,14 +36,26 @@ Authors: J. P. Bastos, Nicolás Cachanosky, John D. Gibson
   them too if you want an even shorter log.
   See ideology-efw/docs/eb-did-few-clusters-guide.md and code/hiel-wcb.do.
 
-  NC: UNRESTRICTED-SAMPLE VERSION - the region exclusions used in the
-  restricted version (dropping "Northern Europe", "Western Europe",
-  "Northern Africa"/"Africa", and "Australia and New Zealand" from Left/Right
-  populists and the continent loop) are REMOVED here, so those two specs use
-  the full worldwide control pool, exactly as when countries were increased
-  earlier in this project. Compare against
-  estimates-sample-splits-polity-slope-restricted.do, which keeps those
-  exclusions active, as a robustness pair.
+  NC: UNRESTRICTED-EBALANCE VERSION - the entropy-balance covariate target is
+  the single pre-trend slope per covariate (log_ch_slope, polity2_slope),
+  rather than the four separate level lags used in the restricted-ebalance
+  version. Fewer exact-match constraints (1-2 moments instead of up to 8)
+  give the entropy-balance optimizer more freedom, which is why this version
+  avoids the catastrophic weight-concentration cases (weight ratios up to
+  1e34, Kish effective N near 0%) seen under the level target - "unrestricted"
+  refers to the looser constraint set on the balancing optimization, not to
+  the estimation sample. Both files now use the identical full worldwide
+  sample throughout (the earlier restricted/unrestricted distinction based on
+  dropping Northern/Western Europe, Northern Africa, and Australia/New
+  Zealand from Left/Right populists and the continent loop has been retired,
+  since those regions were never treated and including them as controls
+  costs nothing). Compare against
+  estimates-sample-splits-polity-slope-restricted.do, which uses the four
+  level lags, as a robustness pair on ebalance construction rather than
+  sample composition. Americas/Africa/Oceania are still dropped from the
+  continent loop in both files - that exclusion is about non-identification
+  (zero treated firms, single-cluster degeneracy, single-episode dominance)
+  and is orthogonal to this restricted/unrestricted distinction.
 ==============================================================================*/
 //------------------------------------------------------------------------------
 // Setup
@@ -57,9 +69,10 @@ global polity_sd_min 0.5    // min treated-group sd(polity2_slope) required for 
                             // polity2 pre-trend slope to enter the ebalance target;
                             // below this it is numerically unidentified and is
                             // dropped (generalizes the Americas-only fix to every
-                            // specification). NC: switched from checking the level
-                            // (polity2_l1) to the pre-trend slope, to match the
-                            // slope-based balance target used throughout below.
+                            // specification). NC: checked on the slope here,
+                            // matching the slope-based balance target used
+                            // throughout this (unrestricted) file; the restricted
+                            // file checks the level (polity2_l1) instead.
 timer clear 99
 timer on 99                 // NC: overall runtime timer, reported at end of do-file
 }
@@ -372,8 +385,11 @@ boottest {post}, weighttype(webb) nograph reps($reps) level(90)
 //------------------------------------------------------------------------------
 // 3. Stacked DID Event Study - Left / Right populists
 //------------------------------------------------------------------------------
-// NC: UNRESTRICTED VERSION - region exclusion removed; uses the full
-// worldwide control pool (see header note).
+// NC: full worldwide control pool (region exclusion commented out
+// below) - see header note. Sample is identical between this file
+// and estimates-sample-splits-polity-slope-restricted.do; they
+// differ only in the ebalance covariate target (slope here vs. the
+// four level lags there).
 * use "$path/JIBS/data/master-stacked-firm.dta", clear
 use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm.dta", replace
 * qui drop if region == "Northern Europe" ///
@@ -478,7 +494,7 @@ twoway (rcap hi lo xpos if phase==0, lcolor(midblue)) ///
 	xtitle("Periods Since Left-Populist Leader", size(small)) ///
 	xlabel(1 "-4" 2 "-3" 3 "-2" 4 "-1" 5 "0" 6 "1" 7 "2" 8 "3") ///
 	xscale(range(0.5 8.5)) legend(off) ///
-	subtitle("Left Populists: Unrestricted (worldwide control pool)", justification(center) size(small)) ///
+	subtitle("Left Populists: Slope Ebalance", justification(center) size(small)) ///
 	note(`notearg', justification(left) size(vsmall)) ///
 	name(e3, replace) nodraw
 }
@@ -575,7 +591,7 @@ twoway (rcap hi lo xpos if phase==0, lcolor(midblue)) ///
 	xtitle("Periods Since Right-Populist Leader", size(small)) ///
 	xlabel(1 "-4" 2 "-3" 3 "-2" 4 "-1" 5 "0" 6 "1" 7 "2" 8 "3") ///
 	xscale(range(0.5 8.5)) legend(off) ///
-	subtitle("Right Populists: Unrestricted (worldwide control pool)", justification(center) size(small)) ///
+	subtitle("Right Populists: Slope Ebalance", justification(center) size(small)) ///
 	note(`notearg', justification(left) size(vsmall)) ///
 	name(e4, replace) nodraw
 }
@@ -598,24 +614,21 @@ di as result "Right populists: pooled post-treatment ATT"
 boottest {post}, weighttype(webb) reps($reps) level(90) nograph
 graph combine e1 e2 e3 e4, xcommon rows(2)
 * graph export "$path/JIBS/output/plots/wild-baseline-left-right-polity.png", replace
-graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-baseline-left-right-polity--ebalance-unrestricted.png", replace
+graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-baseline-left-right-polity--unrestricted.png", replace
 //------------------------------------------------------------------------------
 // By Geographical Region:
 //------------------------------------------------------------------------------
-// NC: UNRESTRICTED VERSION - region exclusion removed; uses the full
-// worldwide control pool (see header note).
+// NC: full worldwide control pool (region exclusion commented out
+// below) - see header note. Sample is identical between this file
+// and estimates-sample-splits-polity-slope-restricted.do; they
+// differ only in the ebalance covariate target (slope here vs. the
+// four level lags there).
 * use "$path/JIBS/data/master-stacked-firm.dta", clear
 use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm.dta", replace
-/*
-qui drop if region    == "Northern Europe" ///
-	  | region    == "Western Europe"  ///
-	  | continent == "Africa"          ///
-	  | continent == "Americas"        ///
-	  | continent == "Oceania"         ///
-	  | region    == "Australia and New Zealand"
-*/
-qui drop if region    == "Australia and New Zealand" ///
-		  | continent == "Africa" | continent == "Oceania" | continent == "Americas"
+* qui drop if region    == "Northern Europe" ///
+* 	  | region    == "Western Europe"  ///
+* 	  | continent == "Africa"          ///
+* 	  | region    == "Australia and New Zealand"
 // NC: Americas, Oceania, and Africa dropped from this continent loop entirely
 // (added on this revision) - Americas' pooled ATT was ~97% driven by the
 // single United States 2017 episode (redundant with the WB High-Income
@@ -661,10 +674,6 @@ foreach region of local regions {
 	else {
 		local balancevars "log_ch_slope polity2_slope"
 	}
-*	if "`region'"=="Americas"{								NC: Commented
-*		local tolerance = "tolerance(3.07866715)"			NC: Commented
-*	} 														NC: Commented
-*	else local tolerance ""									NC: Commented
 	// entropy-balance weights
 	// NC: kept as "capture noisily" (not qui) - this is the fail-safe branch
 	// that must stay able to surface an unexpected ebalance error; our own
@@ -674,21 +683,14 @@ foreach region of local regions {
 	// lets a genuinely different failure be visible if one ever occurs.
 	capture noisily ebalance treat `balancevars' ///
 		if relative_year == 0, gen(_ebal)
-*	capture noisily ebalance treat *_l1 *_l2 *_l3 *_l4 ///  NC: Commented
-*		if relative_year == 0, gen(_ebal) `tolerance'		NC: Commented
 	capture confirm variable _ebal
 	if _rc != 0 {
 		di as error "ebalance failed to converge (no _ebal created) for region: `region'"
 		restore
 		continue
 	}
-*	ebalance treat *_l1 *_l2 *_l3 *_l4 ///					NC: Commented
-*		if relative_year == 0, gen(_ebal) `tolerance'		NC: Commented
 	quietly {
 	egen ebal = mean(_ebal), by(firm_id)
-	tab treat if relative_year==0
-	sum polity2_l1 if relative_year==0 & treat==1
-	sum polity2_l1 if relative_year==0 & treat==0
 	}
 	local r = subinstr("`region'", " ", "", .)
 	quietly {
@@ -777,7 +779,7 @@ foreach region of local regions {
 graph combine `ok_regions', ///
 	xcommon ycommon rows(1)
 *graph export "$path/JIBS/output/plots/wild-by-continent-polity.png", replace
-graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-by-continent-polity--ebalance-unrestricted.png", replace
+graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-by-continent-polity--unrestricted.png", replace
 //------------------------------------------------------------------------------
 // By World Bank Region:
 //------------------------------------------------------------------------------
@@ -918,7 +920,7 @@ foreach region of local wb_regions {
 graph combine eHighIncome eMiddleIncome, ///
 	xcommon ycommon rows(1)
 * graph export "$path/JIBS/output/plots/wild-by-wb-region-polity.png", replace
-graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-by-wb-region-polity--ebalance-unrestricted.png", replace
+graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-by-wb-region-polity--unrestricted.png", replace
 //------------------------------------------------------------------------------
 // By Democracy/Autocracy
 //------------------------------------------------------------------------------
@@ -1193,7 +1195,7 @@ restore
 robustness_excl "Transitioning sample" "Thailand"
 graph combine eDem eTrans, rows(2) xcommon xsize(7) ysize(10)
 *graph export "$path/JIBS/output/plots/wild-by-democratic.png", replace
-graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-by-democratic--ebalance-unrestricted.png", replace
+graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-by-democratic-polity--unrestricted.png", replace
 //------------------------------------------------------------------------------
 // Runtime report
 //------------------------------------------------------------------------------

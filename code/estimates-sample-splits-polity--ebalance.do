@@ -36,28 +36,34 @@ Authors: J. P. Bastos, Nicolás Cachanosky, John D. Gibson
   them too if you want an even shorter log.
   See ideology-efw/docs/eb-did-few-clusters-guide.md and code/hiel-wcb.do.
 
-  NC: RESTRICTED-EBALANCE VERSION - the entropy-balance covariate target is
-  the four separate pre-treatment level lags per covariate (log_ch_l1-l4,
-  polity2_l1-l4, up to 8 exact-match moments), rather than the single
-  pre-trend slope used in the unrestricted-ebalance version. More exact-match
-  constraints force the entropy-balance optimizer into more extreme
-  exponential tilts to satisfy them all simultaneously, which is why this
-  version is more prone to the catastrophic weight-concentration cases
-  (weight ratios up to 1e34, Kish effective N near 0%) documented earlier in
-  this project - "restricted" refers to the tighter constraint set on the
-  balancing optimization, not to the estimation sample. Both files now use
-  the identical full worldwide sample throughout (the earlier restricted/
-  unrestricted distinction based on dropping Northern/Western Europe,
-  Northern Africa, and Australia/New Zealand from Left/Right populists and
-  the continent loop has been retired, since those regions were never
-  treated and including them as controls costs nothing). Compare against
-  estimates-sample-splits-polity-slope-unrestricted.do, which uses the
-  parsimonious slope target, as a robustness pair on ebalance construction
-  rather than sample composition. Americas/Africa/Oceania are still dropped
-  from the continent loop in both files - that exclusion is about
-  non-identification (zero treated firms, single-cluster degeneracy,
-  single-episode dominance) and is orthogonal to this restricted/unrestricted
-  distinction.
+  NC: MERGED LEVEL/SLOPE VERSION - this file used to be split into two
+  near-duplicate do-files (one targeting the four separate pre-treatment
+  level lags per covariate, log_ch_l1-l4/polity2_l1-l4, up to 8 exact-match
+  moments; the other targeting the single pre-trend slope per covariate,
+  log_ch_slope/polity2_slope, 1-2 exact-match moments) that had to be kept in
+  sync by hand across every section - which is exactly how this project
+  picked up a silent file-truncation bug and several stale-filename/stale-
+  comment bugs earlier on. Both branches now live in this one file, selected
+  by the `$ebal_target' switch set just below ("level" or "slope"). More
+  exact-match constraints (level) force the entropy-balance optimizer into
+  more extreme exponential tilts to satisfy them all simultaneously, which is
+  why "level" is more prone to catastrophic weight-concentration cases
+  (weight ratios up to 1e34, Kish effective N near 0%) than "slope", which
+  gives the optimizer more freedom but only targets the linear component of
+  the pre-trend. Run this file once with each setting and report both as a
+  disclosed robustness pair on ebalance construction - don't pick whichever
+  one passes the pre-trend test, that's pretesting/specification-search bias
+  (Roth 2022). Both settings use the identical full worldwide sample (the
+  earlier restricted/unrestricted distinction based on dropping Northern/
+  Western Europe, Northern Africa, and Australia/New Zealand from Left/Right
+  populists and the continent loop has been retired, since those regions
+  were never treated and including them as controls costs nothing).
+  Americas/Africa/Oceania are still dropped from the continent loop under
+  EITHER setting - that exclusion is about non-identification (zero treated
+  firms, single-cluster degeneracy, single-episode dominance) and is
+  orthogonal to the level/slope choice. Plot and export filenames pick up a
+  `--level'/`--slope' suffix automatically from `$ebal_target', via the
+  `target_suffix' local set alongside it.
 ==============================================================================*/
 //------------------------------------------------------------------------------
 // Setup
@@ -67,16 +73,36 @@ clear all
 set more off
 set seed 20260705
 global reps 9999            // wild cluster bootstrap replications
-global polity_sd_min 0.5    // min treated-group sd(polity2_l1) required for the
-                            // polity2 pre-trend LEVEL (first lag) to enter the
-                            // ebalance target; below this it is numerically
-                            // unidentified and is dropped (generalizes the
-                            // Americas-only fix to every specification). NC:
-                            // checked on the level here, matching the level-based
-                            // balance target used throughout this (restricted)
-                            // file; the unrestricted file checks the slope instead.
+global polity_sd_min 0.5    // min treated-group sd of the polity2 pre-trend
+                            // quantity (polity2_slope under "slope",
+                            // polity2_l1 under "level") required for polity2
+                            // to enter the ebalance target; below this it is
+                            // numerically unidentified and is dropped
+                            // (generalizes the Americas-only fix to every
+                            // specification).
 timer clear 99
 timer on 99                 // NC: overall runtime timer, reported at end of do-file
+}
+//------------------------------------------------------------------------------
+// USER CHOICE: entropy-balance covariate target for this run
+//------------------------------------------------------------------------------
+global ebal_target "slope"   // "slope" (parsimonious, 1-2 moments) or "level"
+                              // (four level lags, up to 8 moments) - see
+                              // header for the tradeoff. Everything below -
+                              // balance targets, degeneracy checks, plot
+                              // subtitles, export filenames - follows this
+                              // one switch.
+if !inlist("$ebal_target", "slope", "level") {
+	di as error `"ebal_target must be "slope" or "level" -- got: $ebal_target"'
+	exit 198
+}
+if "$ebal_target" == "slope" {
+	local target_label  "Slope Ebalance"
+	local target_suffix "slope"
+}
+else {
+	local target_label  "Level-Lag Ebalance"
+	local target_suffix "level"
 }
 quietly{
 // Set CWD
@@ -87,6 +113,40 @@ if "`c(username)'" == "ncachosnky" {
 	global path "C:\Users\ncachanosky\OneDrive\Research\GitHub"
 }
 }
+//------------------------------------------------------------------------------
+// Helper: entropy-balance covariate target selection (level vs. slope), and
+// the polity2 degeneracy check, both keyed off $ebal_target
+//------------------------------------------------------------------------------
+// NC: replaces ~9 duplicated copies of this if/else (one per section, plus
+// robustness_excl) that used to have to be kept in sync by hand across two
+// separate files - see header note. Sets `balancevars' in the CALLER's scope
+// via c_local (Stata's mechanism for a program to set a local outside its
+// own scope), since `balancevars' is used directly by an `ebalance' call
+// right after the caller invokes this.
+capture program drop pick_balancevars
+program define pick_balancevars
+	args label ifcond
+	if "$ebal_target" == "slope" {
+		qui sum polity2_slope if `ifcond'
+		if r(sd) < $polity_sd_min {
+			c_local balancevars "log_ch_slope"
+			di as error "`label': polity2 dropped from ebalance target (treated-group sd of polity2 slope = " %5.3f r(sd) " < $polity_sd_min)"
+		}
+		else {
+			c_local balancevars "log_ch_slope polity2_slope"
+		}
+	}
+	else {
+		qui sum polity2_l1 if `ifcond'
+		if r(sd) < $polity_sd_min {
+			c_local balancevars "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4"
+			di as error "`label': polity2 dropped from ebalance target (treated-group sd of polity2 level = " %5.3f r(sd) " < $polity_sd_min)"
+		}
+		else {
+			c_local balancevars "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4 polity2_l1 polity2_l2 polity2_l3 polity2_l4"
+		}
+	}
+end
 //------------------------------------------------------------------------------
 // Robustness: leave-dominant-episode-out check
 //------------------------------------------------------------------------------
@@ -111,14 +171,8 @@ program define robustness_excl
 	qui drop if treat==1 & country=="`exclcountry'"
 	qui count if treat==1
 	di as result "`label' (excl. `exclcountry'): treated firms = " r(N) " (was `nt_before')"
-	qui sum polity2_l1 if relative_year==0 & treat==1
-	if r(sd) < $polity_sd_min {
-		local bv "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4"
-	}
-	else {
-		local bv "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4 polity2_l1 polity2_l2 polity2_l3 polity2_l4"
-	}
-	capture noisily ebalance treat `bv' if relative_year==0, gen(_ebalX)
+	pick_balancevars "`label' (excl. `exclcountry')" "relative_year==0 & treat==1"
+	capture noisily ebalance treat `balancevars' if relative_year==0, gen(_ebalX)
 	capture confirm variable _ebalX
 	if _rc != 0 {
 		di as error "`label' (excl. `exclcountry'): ebalance failed to converge"
@@ -160,33 +214,24 @@ quietly {
 gen log_ch = log(ch)
 gen rel_year = relative_year + 4
 // pre-trend lags + entropy-balance weights
-// NC: RESTRICTED ebalance construction - balance target is the four
-// separate pre-treatment level lags per covariate (log_ch_l1-l4,
-// polity2_l1-l4), not the pre-trend slope. More exact-match moments (4-8
-// instead of 1-2) means a more tightly constrained entropy-balance
-// optimization problem, which is mechanically why this version is more
-// prone to the extreme weight concentration documented earlier in this
-// project. See estimates-sample-splits-polity-slope-unrestricted.do for
-// the parsimonious slope-target comparison arm.
+// NC: slope = OLS trend of the 4 pre-period lags (t=-4..-1), used as the
+// balance target instead of matching each level lag separately. More
+// parsimonious (1-2 exact-match moments instead of 4-8, which directly
+// reduces entropy balance's weight-concentration risk) and more directly
+// targets the parallel-trends assumption, since areg absorb(firm_id)
+// already nets out any firm-level difference in the LEVEL of log_ch -
+// matching levels was always an indirect proxy for matching trends.
 tsset firm_id relative_year
 foreach v in log_ch polity2 {
 bysort firm_id (relative_year): gen `v'_l1 = L1.`v'
 bysort firm_id (relative_year): gen `v'_l2 = L2.`v'
 bysort firm_id (relative_year): gen `v'_l3 = L3.`v'
 bysort firm_id (relative_year): gen `v'_l4 = L4.`v'
+gen `v'_slope = 0.3*`v'_l1 + 0.1*`v'_l2 - 0.1*`v'_l3 - 0.3*`v'_l4
 }
 }
 // --- Entropy-balance covariate selection ---
-// NC: balance target is the four level lags, not the pre-trend slope
-// (see comment above lag generation for rationale).
-qui sum polity2_l1 if relative_year==0 & treat==1
-if r(sd) < $polity_sd_min {
-	local balancevars "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4"
-	di as error "Baseline: polity2 dropped from ebalance target (treated-group sd of polity2 level = " %5.3f r(sd) " < $polity_sd_min)"
-}
-else {
-	local balancevars "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4 polity2_l1 polity2_l2 polity2_l3 polity2_l4"
-}
+pick_balancevars "Baseline" "relative_year==0 & treat==1"
 qui ebalance treat `balancevars' if relative_year == 0, gen(_ebal)
 quietly {
 egen ebal = mean(_ebal), by(firm_id)
@@ -290,19 +335,11 @@ bysort firm_id (relative_year): gen `v'_l1 = L1.`v'
 bysort firm_id (relative_year): gen `v'_l2 = L2.`v'
 bysort firm_id (relative_year): gen `v'_l3 = L3.`v'
 bysort firm_id (relative_year): gen `v'_l4 = L4.`v'
+gen `v'_slope = 0.3*`v'_l1 + 0.1*`v'_l2 - 0.1*`v'_l3 - 0.3*`v'_l4
 }
 }
 // --- Entropy-balance covariate selection ---
-// NC: balance target is the four level lags (see Baseline section for
-// rationale), not the pre-trend slope.
-qui sum polity2_l1 if relative_year==0 & treat==1
-if r(sd) < $polity_sd_min {
-	local balancevars "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4"
-	di as error "Excluding no-treated regions: polity2 dropped from ebalance target (treated-group sd of polity2 level = " %5.3f r(sd) " < $polity_sd_min)"
-}
-else {
-	local balancevars "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4 polity2_l1 polity2_l2 polity2_l3 polity2_l4"
-}
+pick_balancevars "Excluding no-treated regions" "relative_year==0 & treat==1"
 qui ebalance treat `balancevars' if relative_year == 0, gen(_ebal)
 quietly {
 egen ebal = mean(_ebal), by(firm_id)
@@ -387,10 +424,7 @@ boottest {post}, weighttype(webb) nograph reps($reps) level(90)
 // 3. Stacked DID Event Study - Left / Right populists
 //------------------------------------------------------------------------------
 // NC: full worldwide control pool (region exclusion commented out
-// below) - see header note. Sample is identical between this file
-// and estimates-sample-splits-polity-slope-unrestricted.do; they
-// differ only in the ebalance covariate target (level lags here vs.
-// slope there).
+// below) - see header note.
 * use "$path/JIBS/data/master-stacked-firm.dta", clear
 use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm.dta", replace
 * qui drop if region == "Northern Europe" ///
@@ -413,6 +447,7 @@ bysort firm_id (relative_year): gen `v'_l1 = L1.`v'
 bysort firm_id (relative_year): gen `v'_l2 = L2.`v'
 bysort firm_id (relative_year): gen `v'_l3 = L3.`v'
 bysort firm_id (relative_year): gen `v'_l4 = L4.`v'
+gen `v'_slope = 0.3*`v'_l1 + 0.1*`v'_l2 - 0.1*`v'_l3 - 0.3*`v'_l4
 }
 egen cy = group(cohort year)
 }
@@ -422,14 +457,7 @@ qui cap drop _ebal ebal
 // polity2 lags are dropped from the balance target when they have near-zero
 // variance in the lpop-treated group (numerically unidentified for entropy
 // balancing; generalizes the Americas-only fix from the continent loop).
-qui sum polity2_l1 if relative_year==0 & lpop==1
-if r(sd) < $polity_sd_min {
-	local balancevars "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4"
-	di as error "Left populists: polity2 dropped from ebalance target (treated-group sd of polity2 level = " %5.3f r(sd) " < $polity_sd_min)"
-}
-else {
-	local balancevars "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4 polity2_l1 polity2_l2 polity2_l3 polity2_l4"
-}
+pick_balancevars "Left populists" "relative_year==0 & lpop==1"
 qui ebalance lpop `balancevars' ///
 	if relative_year == 0 & (treat==0 | lpop==1), gen(_ebal)
 quietly {
@@ -494,7 +522,7 @@ twoway (rcap hi lo xpos if phase==0, lcolor(midblue)) ///
 	xtitle("Periods Since Left-Populist Leader", size(small)) ///
 	xlabel(1 "-4" 2 "-3" 3 "-2" 4 "-1" 5 "0" 6 "1" 7 "2" 8 "3") ///
 	xscale(range(0.5 8.5)) legend(off) ///
-	subtitle("Left Populists: Level-Lag Ebalance", justification(center) size(small)) ///
+	subtitle("Left Populists: `target_label'", justification(center) size(small)) ///
 	note(`notearg', justification(left) size(vsmall)) ///
 	name(e3, replace) nodraw
 }
@@ -519,14 +547,7 @@ qui cap drop _ebal ebal
 // polity2 lags are dropped from the balance target when they have near-zero
 // variance in the rpop-treated group (numerically unidentified for entropy
 // balancing; generalizes the Americas-only fix from the continent loop).
-qui sum polity2_l1 if relative_year==0 & rpop==1
-if r(sd) < $polity_sd_min {
-	local balancevars "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4"
-	di as error "Right populists: polity2 dropped from ebalance target (treated-group sd of polity2 level = " %5.3f r(sd) " < $polity_sd_min)"
-}
-else {
-	local balancevars "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4 polity2_l1 polity2_l2 polity2_l3 polity2_l4"
-}
+pick_balancevars "Right populists" "relative_year==0 & rpop==1"
 qui ebalance rpop `balancevars' ///
 	if relative_year == 0 & (treat==0 | rpop==1), gen(_ebal)
 quietly {
@@ -591,7 +612,7 @@ twoway (rcap hi lo xpos if phase==0, lcolor(midblue)) ///
 	xtitle("Periods Since Right-Populist Leader", size(small)) ///
 	xlabel(1 "-4" 2 "-3" 3 "-2" 4 "-1" 5 "0" 6 "1" 7 "2" 8 "3") ///
 	xscale(range(0.5 8.5)) legend(off) ///
-	subtitle("Right Populists: Level-Lag Ebalance", justification(center) size(small)) ///
+	subtitle("Right Populists: `target_label'", justification(center) size(small)) ///
 	note(`notearg', justification(left) size(vsmall)) ///
 	name(e4, replace) nodraw
 }
@@ -614,15 +635,12 @@ di as result "Right populists: pooled post-treatment ATT"
 boottest {post}, weighttype(webb) reps($reps) level(90) nograph
 graph combine e1 e2 e3 e4, xcommon rows(2)
 * graph export "$path/JIBS/output/plots/wild-baseline-left-right-polity.png", replace
-graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-baseline-left-right-polity--restricted.png", replace
+graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-baseline-left-right-polity--`target_suffix'.png", replace
 //------------------------------------------------------------------------------
 // By Geographical Region:
 //------------------------------------------------------------------------------
 // NC: full worldwide control pool (region exclusion commented out
-// below) - see header note. Sample is identical between this file
-// and estimates-sample-splits-polity-slope-unrestricted.do; they
-// differ only in the ebalance covariate target (level lags here vs.
-// slope there).
+// below) - see header note.
 * use "$path/JIBS/data/master-stacked-firm.dta", clear
 use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm.dta", replace
 * qui drop if region    == "Northern Europe" ///
@@ -657,22 +675,15 @@ foreach region of local regions {
 	bysort firm_id (relative_year): gen `v'_l2 = L2.`v'
 	bysort firm_id (relative_year): gen `v'_l3 = L3.`v'
 	bysort firm_id (relative_year): gen `v'_l4 = L4.`v'
+	gen `v'_slope = 0.3*`v'_l1 + 0.1*`v'_l2 - 0.1*`v'_l3 - 0.3*`v'_l4
 	}
 	}
 	// --- Entropy-balance covariate selection ---
-	// NC: balance target is the four level lags (see Baseline section for
-	// rationale), not four separate slope. Degeneracy check generalized
-	// from an Americas-only hardcode (this used to be `if "`region'"=="Americas"`
-	// only) - any region's treated firms can hit the same degeneracy, so the
-	// check now runs for every region.
-	qui sum polity2_l1 if relative_year==0 & treat==1
-	if r(sd) < $polity_sd_min {
-		local balancevars "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4"
-		di as error "`region': polity2 dropped from ebalance target (treated-group sd of polity2 level = " %5.3f r(sd) " < $polity_sd_min)"
-	}
-	else {
-		local balancevars "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4 polity2_l1 polity2_l2 polity2_l3 polity2_l4"
-	}
+	// NC: degeneracy check generalized from an Americas-only hardcode (this
+	// used to be `if "`region'"=="Americas"` only) - any region's treated
+	// firms can hit the same degeneracy, so the check now runs for every
+	// region.
+	pick_balancevars "`region'" "relative_year==0 & treat==1"
 	// entropy-balance weights
 	// NC: kept as "capture noisily" (not qui) - this is the fail-safe branch
 	// that must stay able to surface an unexpected ebalance error; our own
@@ -778,7 +789,7 @@ foreach region of local regions {
 graph combine `ok_regions', ///
 	xcommon ycommon rows(1)
 *graph export "$path/JIBS/output/plots/wild-by-continent-polity.png", replace
-graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-by-continent-polity--restricted.png", replace
+graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-by-continent-polity--`target_suffix'.png", replace
 //------------------------------------------------------------------------------
 // By World Bank Region:
 //------------------------------------------------------------------------------
@@ -803,19 +814,11 @@ foreach region of local wb_regions {
 	bysort firm_id (relative_year): gen `v'_l2 = L2.`v'
 	bysort firm_id (relative_year): gen `v'_l3 = L3.`v'
 	bysort firm_id (relative_year): gen `v'_l4 = L4.`v'
+	gen `v'_slope = 0.3*`v'_l1 + 0.1*`v'_l2 - 0.1*`v'_l3 - 0.3*`v'_l4
 	}
 	}
 	// --- Entropy-balance covariate selection ---
-	// NC: balance target is the four level lags (see Baseline section for
-	// rationale), not the pre-trend slope.
-	qui sum polity2_l1 if relative_year==0 & treat==1
-	if r(sd) < $polity_sd_min {
-		local balancevars "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4"
-		di as error "`region': polity2 dropped from ebalance target (treated-group sd of polity2 level = " %5.3f r(sd) " < $polity_sd_min)"
-	}
-	else {
-		local balancevars "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4 polity2_l1 polity2_l2 polity2_l3 polity2_l4"
-	}
+	pick_balancevars "`region'" "relative_year==0 & treat==1"
 	qui ebalance treat `balancevars' ///
 		if relative_year == 0, gen(_ebal)
 	qui egen ebal = mean(_ebal), by(firm_id)
@@ -918,7 +921,7 @@ foreach region of local wb_regions {
 graph combine eHighIncome eMiddleIncome, ///
 	xcommon ycommon rows(1)
 * graph export "$path/JIBS/output/plots/wild-by-wb-region-polity.png", replace
-graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-by-wb-region-polity--restricted.png", replace
+graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-by-wb-region-polity--`target_suffix'.png", replace
 //------------------------------------------------------------------------------
 // By Democracy/Autocracy
 //------------------------------------------------------------------------------
@@ -946,19 +949,11 @@ bysort firm_id (relative_year): gen `v'_l1 = L1.`v'
 bysort firm_id (relative_year): gen `v'_l2 = L2.`v'
 bysort firm_id (relative_year): gen `v'_l3 = L3.`v'
 bysort firm_id (relative_year): gen `v'_l4 = L4.`v'
+gen `v'_slope = 0.3*`v'_l1 + 0.1*`v'_l2 - 0.1*`v'_l3 - 0.3*`v'_l4
 }
 }
 // --- Entropy-balance covariate selection ---
-// NC: balance target is the four level lags (see Baseline section for
-// rationale), not the pre-trend slope.
-qui sum polity2_l1 if relative_year==0 & treat==1
-if r(sd) < $polity_sd_min {
-	local balancevars "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4"
-	di as error "Fully Democratic Sample: polity2 dropped from ebalance target (treated-group sd of polity2 level = " %5.3f r(sd) " < $polity_sd_min)"
-}
-else {
-	local balancevars "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4 polity2_l1 polity2_l2 polity2_l3 polity2_l4"
-}
+pick_balancevars "Fully Democratic Sample" "relative_year==0 & treat==1"
 qui ebalance treat `balancevars' if relative_year == 0, gen(_ebal)
 quietly {
 egen ebal = mean(_ebal), by(firm_id)
@@ -1086,19 +1081,11 @@ bysort firm_id (relative_year): gen `v'_l1 = L1.`v'
 bysort firm_id (relative_year): gen `v'_l2 = L2.`v'
 bysort firm_id (relative_year): gen `v'_l3 = L3.`v'
 bysort firm_id (relative_year): gen `v'_l4 = L4.`v'
+gen `v'_slope = 0.3*`v'_l1 + 0.1*`v'_l2 - 0.1*`v'_l3 - 0.3*`v'_l4
 }
 }
 // --- Entropy-balance covariate selection ---
-// NC: balance target is the four level lags (see Baseline section for
-// rationale), not the pre-trend slope.
-qui sum polity2_l1 if relative_year==0 & treat==1
-if r(sd) < $polity_sd_min {
-	local balancevars "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4"
-	di as error "Transitioning sample: polity2 dropped from ebalance target (treated-group sd of polity2 level = " %5.3f r(sd) " < $polity_sd_min)"
-}
-else {
-	local balancevars "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4 polity2_l1 polity2_l2 polity2_l3 polity2_l4"
-}
+pick_balancevars "Transitioning sample" "relative_year==0 & treat==1"
 qui ebalance treat `balancevars' if relative_year == 0, gen(_ebal)
 qui egen ebal = mean(_ebal), by(firm_id)
 // --- Diagnostic: ebal weight distribution (control firms) ---
@@ -1191,7 +1178,7 @@ restore
 robustness_excl "Transitioning sample" "Thailand"
 graph combine eDem eTrans, rows(2) xcommon xsize(7) ysize(10)
 *graph export "$path/JIBS/output/plots/wild-by-democratic.png", replace
-graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-by-democratic-polity--restricted.png", replace
+graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-by-democratic--`target_suffix'.png", replace
 //------------------------------------------------------------------------------
 // Runtime report
 //------------------------------------------------------------------------------

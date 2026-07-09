@@ -61,6 +61,70 @@ if "`c(username)'" == "ncachosnky" {
 }
 }
 //------------------------------------------------------------------------------
+// Robustness: leave-dominant-episode-out check
+//------------------------------------------------------------------------------
+// NC: several sub-samples (Asia, Middle Income, High Income, Transitioning)
+// turned out to be 40-80%+ concentrated in a single country-episode (mostly
+// Thailand 2001), which is what's driving the catastrophic entropy-balance
+// weight concentration seen in the diagnostics, not sample size (see the
+// leave-one-episode-out discussion). This program reruns a given spec's joint
+// pre-trend test and pooled post-treatment ATT after dropping the treated
+// firms from one dominant country, to check whether the result is really
+// that country's effect wearing the sub-sample's name. It must be called on
+// an already-restricted working sample (e.g. inside a region's preserve
+// block) and does not preserve/restore itself, since it is always called
+// right before the caller's own restore.
+capture program drop robustness_excl
+program define robustness_excl
+	args label exclcountry
+	di as result "=== `label': leave-`exclcountry'-out robustness check ==="
+	cap drop _ebalX ebalX w2x post_x dX0 dX1 dX2 dX4 dX5 dX6 dX7
+	qui count if treat==1
+	local nt_before = r(N)
+	qui drop if treat==1 & country=="`exclcountry'"
+	qui count if treat==1
+	di as result "`label' (excl. `exclcountry'): treated firms = " r(N) " (was `nt_before')"
+	qui sum polity2_l1 if relative_year==0 & treat==1
+	if r(sd) < $polity_sd_min {
+		local bv "log_ch_l1 log_ch_l2 log_ch_l3 log_ch_l4"
+	}
+	else {
+		local bv "*_l1 *_l2 *_l3 *_l4"
+	}
+	capture noisily ebalance treat `bv' if relative_year==0, gen(_ebalX)
+	capture confirm variable _ebalX
+	if _rc != 0 {
+		di as error "`label' (excl. `exclcountry'): ebalance failed to converge"
+		exit
+	}
+	qui egen ebalX = mean(_ebalX), by(firm_id)
+	qui count if relative_year==0 & treat==0 & !missing(ebalX)
+	local ncw = r(N)
+	qui sum ebalX if relative_year==0 & treat==0 & !missing(ebalX), detail
+	local wmax = r(max)
+	local wmin = r(min)
+	qui gen double w2x = ebalX^2 if relative_year==0 & treat==0 & !missing(ebalX)
+	qui sum ebalX if relative_year==0 & treat==0 & !missing(ebalX)
+	local sumw = r(sum)
+	qui sum w2x if relative_year==0 & treat==0 & !missing(ebalX)
+	local sumw2 = r(sum)
+	local effN = (`sumw')^2 / `sumw2'
+	di as result "`label' (excl. `exclcountry'): control ebal weight ratio (max/min) = " %9.1f `wmax'/`wmin'
+	di as result "`label' (excl. `exclcountry'): Kish effective N = " %9.1f `effN' " out of " `ncw' " control firms"
+	qui forvalues r = 0/7 {
+		if `r' != 3 gen byte dX`r' = (treat==1 & rel_year==`r')
+	}
+	qui areg log_ch dX0 dX1 dX2 dX4 dX5 dX6 dX7 i.cy [aweight=ebalX], ///
+		absorb(firm_id) cluster(iso)
+	di as result "`label' (excl. `exclcountry'): joint pre-trend test"
+	boottest {dX0} {dX1} {dX2}, weighttype(webb) nograph reps($reps) level(90)
+	qui gen byte post_x = (treat==1 & rel_year>=4)
+	qui areg log_ch dX0 dX1 dX2 post_x i.cy [aweight=ebalX], ///
+		absorb(firm_id) cluster(iso)
+	di as result "`label' (excl. `exclcountry'): pooled post-treatment ATT"
+	boottest {post_x}, weighttype(webb) nograph reps($reps) level(90)
+end
+//------------------------------------------------------------------------------
 // 1. Stacked DID Event Study - Baseline
 //------------------------------------------------------------------------------
 * use "$path/JIBS/data/master-stacked-firm.dta", clear
@@ -291,14 +355,10 @@ boottest {post}, weighttype(webb) nograph reps($reps) level(90)
 //------------------------------------------------------------------------------
 * use "$path/JIBS/data/master-stacked-firm.dta", clear
 use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm.dta", replace
-
-/*
 qui drop if region == "Northern Europe" ///
 	  | region == "Western Europe"  ///
 	  | region == "Northern Africa" ///
 	  | region == "Australia and New Zealand"
-*/ 
-	 
 qui egen tag_left  = total(lpop) if treat==1, by(firm_id)
 qui egen tag_right = total(rpop) if treat==1, by(firm_id)
 qui replace lpop = 1 if tag_left  > 0 & treat==1 & tag_right==0
@@ -522,14 +582,10 @@ graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/
 //------------------------------------------------------------------------------
 * use "$path/JIBS/data/master-stacked-firm.dta", clear
 use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm.dta", replace
-
-/*
 qui drop if region    == "Northern Europe" ///
-	      | region    == "Western Europe"  ///
-	      | continent == "Africa"          ///
-	      | region    == "Australia and New Zealand"
-*/
-	  
+	  | region    == "Western Europe"  ///
+	  | continent == "Africa"          ///
+	  | region    == "Australia and New Zealand"
 qui gen log_ch = log(ch)
 qui gen rel_year = relative_year + 4
 qui levelsof continent, local(regions)
@@ -648,6 +704,13 @@ foreach region of local regions {
 		absorb(firm_id) cluster(iso)
 	di as result "`region': pooled post-treatment ATT"
 	boottest {post}, weighttype(webb) nograph reps($reps) level(90)
+	// --- Robustness: leave-Thailand-out (program defined near top of do-file) ---
+	// NC: must run before "qui use `res', clear" below swaps the working
+	// dataset for the tiny plot-results file - robustness_excl needs the full
+	// micro-level data (treat, country, ebal, etc.).
+	if "`region'"=="Asia" {
+		robustness_excl "Asia" "Thailand"
+	}
 	local notearg `""`nt' treated and `nc' control firms" "Wild cluster bootstrap standard errors adjusted for `ncl' clusters.""'
 	qui use "`res'", clear
 	quietly{
@@ -780,6 +843,16 @@ foreach region of local wb_regions {
 		absorb(firm_id) cluster(iso)
 	di as result "`region': unweighted pooled post-treatment ATT"
 	boottest {post}, weighttype(webb) nograph reps($reps) level(90)
+	// --- Robustness: leave-dominant-episode-out (program defined near top of do-file) ---
+	// NC: must run before "qui use `res', clear" below swaps the working
+	// dataset for the tiny plot-results file - robustness_excl needs the full
+	// micro-level data (treat, country, ebal, etc.).
+	if "`region'"=="Middle Income" {
+		robustness_excl "Middle Income" "Thailand"
+	}
+	if "`region'"=="High Income" {
+		robustness_excl "High Income" "United States"
+	}
 	local notearg `""`nt' treated and `nc' control firms" "Wild cluster bootstrap standard errors adjusted for `ncl' clusters.""'
 	qui use "`res'", clear
 	quietly{
@@ -1068,6 +1141,13 @@ twoway (rcap hi lo xpos if arm==1, lcolor(midblue)) ///
     name(eTrans, replace)
 }
 restore
+// --- Robustness: leave-Thailand-out (program defined near top of do-file) ---
+// NC: pooled across Arm A/B - checks whether the overall Transitioning-sample
+// result (not the Arm A vs B contrast specifically) survives dropping
+// Thailand, which alone is 47% of this spec's treated firms. Placed after the
+// primary plot's own preserve/restore so it can't corrupt the ntA/ntB/ncl
+// locals or the saved graph used above.
+robustness_excl "Transitioning sample" "Thailand"
 graph combine eDem eTrans, rows(2) xcommon xsize(7) ysize(10)
 *graph export "$path/JIBS/output/plots/wild-by-democratic.png", replace
 graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/output/plots/wild-by-democratic.png", replace

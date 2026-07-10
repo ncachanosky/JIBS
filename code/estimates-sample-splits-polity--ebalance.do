@@ -114,6 +114,111 @@ if "`c(username)'" == "ncachosnky" {
 }
 }
 //------------------------------------------------------------------------------
+// STEP 0: Inflation-adjust cash balances -> master-stacked-firm-real.dta
+//------------------------------------------------------------------------------
+// NC (2026-07-09): builds a REAL (CPI-deflated) cash variable from the raw
+// firm panel and saves it as a new .dta, so every section below just loads
+// the real file instead of repeating this merge seven times (once per
+// "use ... .dta" section in this file). Source: World Bank FP.CPI.TOTL.ZG
+// (annual CPI inflation, %), saved at data/raw/inflation.csv (long format:
+// Country Code, Series Code, year, Value). That series is a GROWTH RATE, not
+// a price level, so a country-specific price index is chain-linked from the
+// growth rates before deflating:
+//     index_t = index_{t-1} * (1 + inflation_pct_t/100),  index = 100 in
+//     each country's own first year in the 1990-2022 window.
+// The base-year choice is arbitrary - it only sets the index's intercept,
+// not the real growth rates it implies - so no decision is needed there.
+// real_ch = ch / (index/100), i.e. cash expressed in the country's own
+// base-year prices.
+//
+// Coverage check against the 54 countries / 1995-2020 window used in the
+// project's country-level panel:
+//   - Taiwan (TWN): absent from the WB file entirely (WB does not publish
+//     CPI for Taiwan - not a UN member/borrower).
+//   - Venezuela (VEN): 18 of 26 years missing (1995-2008, 2017-2020) - WB
+//     stopped/limited publishing Venezuelan CPI during the data-quality
+//     crisis under Chavez/Maduro.
+//   All other 52 countries have a complete 1995-2020 series.
+// Per NC decision (2026-07-09): VEN and TWN are DROPPED from inflation.csv
+// before the merge, so real_ch is left MISSING for every one of their
+// firm-years (not just the years WB happens to be missing), rather than
+// patched with a substitute series or silently left nominal. Any spec run
+// off master-stacked-firm-real.dta therefore loses Venezuela's (1999) and
+// Taiwan's (2000) treated episodes entirely - by design, not a bug. A
+// nominal-ch robustness check (using the original master-stacked-firm.dta)
+// can still include them if needed later. Note this also means diagnostic
+// tabs like "treated firms by country/year" below will still LIST Venezuela/
+// Taiwan rows (those firm-years aren't deleted, only real_ch/log_ch is
+// missing for them) - they just won't contribute to any areg/ebalance that
+// conditions on log_ch.
+//------------------------------------------------------------------------------
+preserve
+	//--- build a chain-linked CPI index (long: iso_str year cpi_index) ---
+	qui import delimited "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\raw\inflation.csv", clear varnames(1)
+	// NC: defensive column-name handling - import delimited's exact casing of
+	// "Country Code"/"Value" can vary by Stata version/setting, so confirm
+	// rather than assume.
+	qui ds
+	local inflation_cols `r(varlist)'
+	capture confirm variable countrycode
+	if _rc capture rename CountryCode countrycode
+	capture confirm variable countrycode
+	if _rc {
+		di as error "inflation.csv: could not find a country-code column (got: `inflation_cols') - check the header row"
+		exit 198
+	}
+	capture confirm variable year
+	if _rc {
+		di as error "inflation.csv: could not find a year column (got: `inflation_cols')"
+		exit 198
+	}
+	capture confirm variable value
+	if _rc capture rename Value value
+	capture confirm variable value
+	if _rc {
+		di as error "inflation.csv: could not find a value column (got: `inflation_cols')"
+		exit 198
+	}
+	qui rename countrycode iso_str
+	capture destring year, replace force
+	capture destring value, replace force
+	qui rename value cpi_inflation_pct
+	qui keep iso_str year cpi_inflation_pct
+	qui keep if inrange(year, 1990, 2022)
+	// drop VEN/TWN entirely - see coverage note above
+	qui drop if inlist(iso_str, "VEN", "TWN")
+	// verify each remaining country's series is gap-free over 1990-2022
+	// before chain-linking (a chain-link across a gap silently assumes zero
+	// inflation for the missing year(s), which would be wrong)
+	qui bysort iso_str: egen n_obs = count(cpi_inflation_pct)
+	local n_expected = 2022 - 1990 + 1
+	qui gen byte iso_incomplete = (n_obs < `n_expected')
+	qui levelsof iso_str if iso_incomplete==1, local(bad_isos)
+	if `"`bad_isos'"' != "" {
+		di as error "inflation.csv: incomplete 1990-2022 series (gaps) for: `bad_isos' - dropped from real_ch construction; check whether any are treated countries"
+	}
+	qui drop if iso_incomplete==1
+	qui drop n_obs iso_incomplete
+	qui sort iso_str year
+	qui by iso_str: gen cpi_index = 100 if _n==1
+	qui by iso_str: replace cpi_index = cpi_index[_n-1] * (1 + cpi_inflation_pct/100) if _n>1
+	qui keep iso_str year cpi_index
+	tempfile cpi_index
+	qui save "`cpi_index'"
+restore
+
+use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm.dta", clear
+qui decode iso, gen(iso_str)
+qui merge m:1 iso_str year using "`cpi_index'", keep(master match) keepusing(cpi_index)
+qui gen real_ch = ch / (cpi_index/100)
+qui count if _merge==1
+di as result "master-stacked-firm-real: " r(N) " of " _N " firm-year obs have no CPI match (real_ch left missing) - expected: Venezuela, Taiwan"
+di as result "master-stacked-firm-real: unmatched firm-year obs by country"
+tab iso_str if _merge==1
+qui drop _merge iso_str
+save "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm-real.dta", replace
+di as result "Saved master-stacked-firm-real.dta"
+//------------------------------------------------------------------------------
 // Helper: entropy-balance covariate target selection (level vs. slope), and
 // the polity2 degeneracy check, both keyed off $ebal_target
 //------------------------------------------------------------------------------
@@ -209,9 +314,9 @@ end
 // 1. Stacked DID Event Study - Baseline
 //------------------------------------------------------------------------------
 * use "$path/JIBS/data/master-stacked-firm.dta", clear
-use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm.dta", replace
+use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm-real.dta", replace
 quietly {
-gen log_ch = log(ch)
+gen log_ch = log(real_ch)
 gen rel_year = relative_year + 4
 // pre-trend lags + entropy-balance weights
 // NC: slope = OLS trend of the 4 pre-period lags (t=-4..-1), used as the
@@ -321,13 +426,13 @@ boottest {post}, weighttype(webb) nograph reps($reps) level(90)
 // 2. Stacked DID Event Study - Excluding regions with no treated cases
 //------------------------------------------------------------------------------
 * use "$path/JIBS/data/master-stacked-firm.dta", clear
-use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm.dta", replace
+use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm-real.dta", replace
 qui drop if region == "Northern Europe" ///
 	  | region == "Western Europe"  ///
 	  | region == "Northern Africa" ///
 	  | region == "Australia and New Zealand"
 quietly {
-gen log_ch = log(ch)
+gen log_ch = log(real_ch)
 gen rel_year = relative_year + 4
 tsset firm_id relative_year
 foreach v in log_ch polity2 {
@@ -426,7 +531,7 @@ boottest {post}, weighttype(webb) nograph reps($reps) level(90)
 // NC: full worldwide control pool (region exclusion commented out
 // below) - see header note.
 * use "$path/JIBS/data/master-stacked-firm.dta", clear
-use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm.dta", replace
+use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm-real.dta", replace
 * qui drop if region == "Northern Europe" ///
 * 	  | region == "Western Europe"  ///
 * 	  | region == "Northern Africa" ///
@@ -439,7 +544,7 @@ qui replace rpop = 1 if tag_right > 0 & treat==1 & tag_left==0
 tab lpop relative_year if treat==0 | lpop==1
 tab rpop relative_year if treat==0 | rpop==1
 quietly {
-gen log_ch = log(ch)
+gen log_ch = log(real_ch)
 gen rel_year = relative_year + 4
 tsset firm_id relative_year
 foreach v in log_ch polity2 {
@@ -642,7 +747,7 @@ graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/
 // NC: full worldwide control pool (region exclusion commented out
 // below) - see header note.
 * use "$path/JIBS/data/master-stacked-firm.dta", clear
-use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm.dta", replace
+use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm-real.dta", replace
 * qui drop if region    == "Northern Europe" ///
 * 	  | region    == "Western Europe"  ///
 * 	  | continent == "Africa"          ///
@@ -659,7 +764,7 @@ use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\mast
 qui drop if continent == "Africa" ///
 	  | continent == "Americas" ///
 	  | continent == "Oceania"
-qui gen log_ch = log(ch)
+qui gen log_ch = log(real_ch)
 qui gen rel_year = relative_year + 4
 qui levelsof continent, local(regions)
 qui egen cy = group(cohort year)
@@ -794,8 +899,8 @@ graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/
 // By World Bank Region:
 //------------------------------------------------------------------------------
 * use "$path/JIBS/data/master-stacked-firm.dta", clear
-use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm.dta", replace
-qui gen log_ch = log(ch)
+use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm-real.dta", replace
+qui gen log_ch = log(real_ch)
 qui gen rel_year = relative_year + 4
 qui gen _wb_region = ""
 qui replace _wb_region = "High Income"   if wb_region == "High income"
@@ -926,8 +1031,8 @@ graph export "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS/
 // By Democracy/Autocracy
 //------------------------------------------------------------------------------
 * use "$path/JIBS/data/master-stacked-firm.dta", clear
-use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm.dta", replace
-qui gen log_ch = log(ch)
+use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm-real.dta", replace
+qui gen log_ch = log(real_ch)
 qui gen rel_year = relative_year + 4
 // None of the countries that remain non-democracies or autocracies for 8 years
 // Have treated cases, so no point.
@@ -1037,8 +1142,8 @@ restore
 // By Democracy/Autocracy
 //------------------------------------------------------------------------------
 * use "$path/JIBS/data/master-stacked-firm.dta", clear
-use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm.dta", replace
-qui gen log_ch = log(ch)
+use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\master-stacked-firm-real.dta", replace
+qui gen log_ch = log(real_ch)
 qui gen rel_year = relative_year + 4
 // None of the countries that remain non-democracies or autocracies for 8 years
 // Have treated cases, so no point.

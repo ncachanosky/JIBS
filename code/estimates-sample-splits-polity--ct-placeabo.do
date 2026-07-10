@@ -160,14 +160,18 @@ end
 capture program drop ct_placebo
 program define ct_placebo
 	args label truevar b_obs se_obs
+	di as txt "[ct_placebo checkpoint 1] label=`label' truevar=`truevar' b_obs=`b_obs' se_obs=`se_obs'"
 	local t_obs = `b_obs' / `se_obs'
+	di as txt "[ct_placebo checkpoint 2] t_obs=`t_obs'"
 	tempfile split_snapshot
 	qui save `split_snapshot'
+	di as txt "[ct_placebo checkpoint 3] split snapshot saved"
 	tempname pf
 	tempfile placebo_draws
 	postfile `pf' str24 placebo_iso long placebo_cohort double b double se double t using "`placebo_draws'", replace
 	local ndraws = 0
 	qui levelsof cohort, local(cohorts)
+	di as txt "[ct_placebo checkpoint 4] cohorts = `cohorts'"
 	foreach coh of local cohorts {
 		qui use `split_snapshot', clear
 		qui keep if cohort == `coh'
@@ -175,19 +179,36 @@ program define ct_placebo
 		qui count
 		if r(N) == 0 continue
 		qui levelsof iso, local(placebo_isos)
+		di as txt "[ct_placebo checkpoint 5] cohort `coh': placebo_isos = `placebo_isos'"
 		tempfile cohort_snapshot
 		qui save `cohort_snapshot'
 		foreach piso of local placebo_isos {
 			qui use `cohort_snapshot', clear
-			qui gen byte ptreat = (iso == "`piso'")
-			qui count if ptreat == 1 & relative_year == 0
+			capture qui gen byte ptreat = (iso == "`piso'")
+			if _rc != 0 {
+				di as error "[ct_placebo] cohort `coh' piso `piso': gen ptreat failed rc=" _rc
+				continue
+			}
+			capture qui count if ptreat == 1 & relative_year == 0
+			if _rc != 0 {
+				di as error "[ct_placebo] cohort `coh' piso `piso': count failed rc=" _rc
+				continue
+			}
 			if r(N) == 0 continue
 			pick_balancevars "`label' placebo `piso' (cohort `coh')" "relative_year==0 & ptreat==1"
 			capture noisily ebalance ptreat `balancevars' if relative_year==0, gen(_ebalP)
 			capture confirm variable _ebalP
 			if _rc != 0 continue
-			qui egen ebalP = mean(_ebalP), by(firm_id)
-			qui gen byte post_p = (ptreat == 1 & rel_year >= 4)
+			capture qui egen ebalP = mean(_ebalP), by(firm_id)
+			if _rc != 0 {
+				di as error "[ct_placebo] cohort `coh' piso `piso': egen ebalP failed rc=" _rc
+				continue
+			}
+			capture qui gen byte post_p = (ptreat == 1 & rel_year >= 4)
+			if _rc != 0 {
+				di as error "[ct_placebo] cohort `coh' piso `piso': gen post_p failed rc=" _rc
+				continue
+			}
 			capture qui areg log_ch post_p i.year [aweight=ebalP], absorb(firm_id) cluster(iso)
 			if _rc == 0 {
 				local bb  = _b[post_p]
@@ -268,10 +289,19 @@ foreach reg in "Asia" "Europe" {
 	local se_obs = _se[post]
 	di as result "`reg': pooled post-treatment ATT (real spec) b=" %6.4f `b_obs' " se=" %6.4f `se_obs'
 	boottest {post}, weighttype(webb) nograph reps($reps) level(90)
-	matrix ci = r(CI)
-	local wcb_lo = ci[1,1]
-	local wcb_hi = ci[rowsof(ci),colsof(ci)]
+	capture matrix ci = r(CI)
+	if _rc == 0 {
+		local wcb_lo = ci[1,1]
+		local wcb_hi = ci[rowsof(ci),colsof(ci)]
+	}
+	else {
+		di as error "`reg': could not extract WCB CI matrix (rc=" _rc ") -- wcb_lo/wcb_hi set to missing"
+		local wcb_lo = .
+		local wcb_hi = .
+	}
+	di as txt "[checkpoint] `reg': about to call ct_placebo"
 	ct_placebo "`reg'" treat `b_obs' `se_obs'
+	di as txt "[checkpoint] `reg': ct_placebo returned, ndraws=`ct_ndraws'"
 	post `rpf' ("`reg'") (`b_obs') (`se_obs') (`b_obs'/`se_obs') (`wcb_lo') (`wcb_hi') ///
 		(`ct_ndraws') (`ct_p_ri_t') (`ct_p_ri_b') (`ct_p_floor')
 }
@@ -300,10 +330,19 @@ foreach arm in "lpop" "rpop" {
 	local se_obs = _se[post]
 	di as result "`armlabel': pooled post-treatment ATT (real spec) b=" %6.4f `b_obs' " se=" %6.4f `se_obs'
 	boottest {post}, weighttype(webb) nograph reps($reps) level(90)
-	matrix ci = r(CI)
-	local wcb_lo = ci[1,1]
-	local wcb_hi = ci[rowsof(ci),colsof(ci)]
+	capture matrix ci = r(CI)
+	if _rc == 0 {
+		local wcb_lo = ci[1,1]
+		local wcb_hi = ci[rowsof(ci),colsof(ci)]
+	}
+	else {
+		di as error "`armlabel': could not extract WCB CI matrix (rc=" _rc ") -- wcb_lo/wcb_hi set to missing"
+		local wcb_lo = .
+		local wcb_hi = .
+	}
+	di as txt "[checkpoint] `armlabel': about to call ct_placebo"
 	ct_placebo "`armlabel'" `arm' `b_obs' `se_obs'
+	di as txt "[checkpoint] `armlabel': ct_placebo returned, ndraws=`ct_ndraws'"
 	post `rpf' ("`armlabel'") (`b_obs') (`se_obs') (`b_obs'/`se_obs') (`wcb_lo') (`wcb_hi') ///
 		(`ct_ndraws') (`ct_p_ri_t') (`ct_p_ri_b') (`ct_p_floor')
 }
@@ -332,10 +371,19 @@ else {
 	local se_obs = _se[post]
 	di as result "Fully Democratic Sample: pooled post-treatment ATT (real spec) b=" %6.4f `b_obs' " se=" %6.4f `se_obs'
 	boottest {post}, weighttype(webb) nograph reps($reps) level(90)
-	matrix ci = r(CI)
-	local wcb_lo = ci[1,1]
-	local wcb_hi = ci[rowsof(ci),colsof(ci)]
+	capture matrix ci = r(CI)
+	if _rc == 0 {
+		local wcb_lo = ci[1,1]
+		local wcb_hi = ci[rowsof(ci),colsof(ci)]
+	}
+	else {
+		di as error "Fully Democratic Sample: could not extract WCB CI matrix (rc=" _rc ") -- wcb_lo/wcb_hi set to missing"
+		local wcb_lo = .
+		local wcb_hi = .
+	}
+	di as txt "[checkpoint] Fully Democratic Sample: about to call ct_placebo"
 	ct_placebo "Fully Democratic Sample" treat `b_obs' `se_obs'
+	di as txt "[checkpoint] Fully Democratic Sample: ct_placebo returned, ndraws=`ct_ndraws'"
 	post `rpf' ("Fully Democratic Sample") (`b_obs') (`se_obs') (`b_obs'/`se_obs') (`wcb_lo') (`wcb_hi') ///
 		(`ct_ndraws') (`ct_p_ri_t') (`ct_p_ri_b') (`ct_p_floor')
 }
@@ -372,10 +420,19 @@ else {
 	local se_obs = _se[post]
 	di as result "Transitioning sample: pooled post-treatment ATT (real spec) b=" %6.4f `b_obs' " se=" %6.4f `se_obs'
 	boottest {post}, weighttype(webb) nograph reps($reps) level(90)
-	matrix ci = r(CI)
-	local wcb_lo = ci[1,1]
-	local wcb_hi = ci[rowsof(ci),colsof(ci)]
+	capture matrix ci = r(CI)
+	if _rc == 0 {
+		local wcb_lo = ci[1,1]
+		local wcb_hi = ci[rowsof(ci),colsof(ci)]
+	}
+	else {
+		di as error "Transitioning sample: could not extract WCB CI matrix (rc=" _rc ") -- wcb_lo/wcb_hi set to missing"
+		local wcb_lo = .
+		local wcb_hi = .
+	}
+	di as txt "[checkpoint] Transitioning sample: about to call ct_placebo"
 	ct_placebo "Transitioning sample" treat `b_obs' `se_obs'
+	di as txt "[checkpoint] Transitioning sample: ct_placebo returned, ndraws=`ct_ndraws'"
 	post `rpf' ("Transitioning sample") (`b_obs') (`se_obs') (`b_obs'/`se_obs') (`wcb_lo') (`wcb_hi') ///
 		(`ct_ndraws') (`ct_p_ri_t') (`ct_p_ri_b') (`ct_p_floor')
 }

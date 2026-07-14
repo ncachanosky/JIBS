@@ -1,0 +1,11 @@
+sample,n_treated,n_control,n_clusters,dominant_episode,dominant_share
+Baseline (full worldwide sample),1384,90038,54,Thailand,47.10982658959538
+Left populists,167,90038,50,Indonesia,42.51497005988024
+Right populists,1217,90038,51,Thailand,53.57436318816763
+Continent: Africa,12,21,2,South Africa,100
+Continent: Americas,241,5379,10,United States,96.6804979253112
+Continent: Asia,907,23241,11,Thailand,71.88533627342889
+Continent: Europe,224,60913,29,Poland,58.48214285714286
+Continent: Oceania,0,484,2,,
+WB income group: High Income,573,65635,37,United States,40.66317626527051
+WB income group: Middle Income,809,24340,16,Thailand,80.59332509270705

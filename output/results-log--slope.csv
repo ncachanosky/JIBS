@@ -1,0 +1,72 @@
+spec,test_type,null_hypothesis,coefficient,t_stat,p_value,ci_low,ci_high,n_clusters,ebal_target,reps
+"Baseline","pretrend","no differential pre-trend at t=-4 (H0: coefficient on d0 = 0)",-.0016318,  -0.3699,   0.7348,-.0089051, .0066113,54,slope,9999
+"Baseline","pretrend","no differential pre-trend at t=-3 (H0: coefficient on d1 = 0)",-.0020532,  -0.5296,   0.6260,-.0084456, .0047653,54,slope,9999
+"Baseline","pretrend","no differential pre-trend at t=-2 (H0: coefficient on d2 = 0)", .0016654,   0.5576,   0.6139,-.0035873, .0065897,54,slope,9999
+"Baseline","att","no average treatment effect in periods 0-3 (H0: coefficient on post = 0)", .0055861,   1.4316,   0.2507,-.0025625, .0128769,54,slope,9999
+"Excluding no-treated regions","pretrend","no differential pre-trend at t=-4 (H0: coefficient on d0 = 0)",  -.00133,  -0.3067,   0.7798, -.008481, .0082047,36,slope,9999
+"Excluding no-treated regions","pretrend","no differential pre-trend at t=-3 (H0: coefficient on d1 = 0)",-.0022826,  -0.6305,   0.5826,-.0082521, .0048807,36,slope,9999
+"Excluding no-treated regions","pretrend","no differential pre-trend at t=-2 (H0: coefficient on d2 = 0)", .0011262,   0.4187,   0.7213,-.0038996, .0055607,36,slope,9999
+"Excluding no-treated regions","att","no average treatment effect in periods 0-3 (H0: coefficient on post = 0)", .0051023,   1.5379,   0.2342,-.0025562, .0116668,36,slope,9999
+"Left populists","pretrend","no differential pre-trend at t=-4 (H0: coefficient on d0 = 0)",-.0163021,  -1.5953,   0.2572,-.0402913, .0046138,50,slope,9999
+"Left populists","pretrend","no differential pre-trend at t=-3 (H0: coefficient on d1 = 0)",-.0199246,  -1.8071,   0.1623,-.0470465,  .001325,50,slope,9999
+"Left populists","pretrend","no differential pre-trend at t=-2 (H0: coefficient on d2 = 0)",-.0067033,  -0.7296,   0.7033, -.029929,  .013493,50,slope,9999
+"Left populists","att","no average treatment effect in periods 0-3 (H0: coefficient on post = 0)",-.0078997,  -1.5711,   0.3301,-.0206109, .0037062,50,slope,9999
+"Right populists","pretrend","no differential pre-trend at t=-4 (H0: coefficient on d0 = 0)", .0017978,   0.3476,   0.7588,-.0072977,  .015441,51,slope,9999
+"Right populists","pretrend","no differential pre-trend at t=-3 (H0: coefficient on d1 = 0)", .0020968,   0.5430,   0.6102,-.0046935, .0114334,51,slope,9999
+"Right populists","pretrend","no differential pre-trend at t=-2 (H0: coefficient on d2 = 0)", .0032815,   1.5471,   0.1757,-.0006818, .0079442,51,slope,9999
+"Right populists","att","no average treatment effect in periods 0-3 (H0: coefficient on post = 0)", .0092025,   2.3135,   0.0713, .0008955, .0188213,51,slope,9999
+"Asia","pretrend","no differential pre-trend at t=-4 (H0: coefficient on d0 = 0)", .0092658,   1.3863,   0.0180, .0012762, .0522649,11,slope,9999
+"Asia","pretrend","no differential pre-trend at t=-3 (H0: coefficient on d1 = 0)", .0030753,   2.4169,   0.1256,-.0007017, .0081113,11,slope,9999
+"Asia","pretrend","no differential pre-trend at t=-2 (H0: coefficient on d2 = 0)", .0051839,   4.7503,   0.1024, -.000215, .0077034,11,slope,9999
+"Asia","att","no average treatment effect in periods 0-3 (H0: coefficient on post = 0)", .0082035,   1.4519,   0.4030,-.0062551, .0314954,11,slope,9999
+"Asia (excl. Thailand)","robustness_pretrend","no differential pre-trend at t=-4 (H0: coefficient on dX0 = 0)", .0064507,   0.7997,   0.4367,-.0094414, .0637255,11,slope,9999
+"Asia (excl. Thailand)","robustness_pretrend","no differential pre-trend at t=-3 (H0: coefficient on dX1 = 0)", .0000295,   0.0182,   0.9864,-.0101322, .0032384,11,slope,9999
+"Asia (excl. Thailand)","robustness_pretrend","no differential pre-trend at t=-2 (H0: coefficient on dX2 = 0)", .0042065,   3.7016,   0.1354,-.0017901, .0060804,11,slope,9999
+"Asia (excl. Thailand)","robustness_att","no average treatment effect in periods 0-3, excluding Thailand (H0: coefficient on post_x = 0)", .0039498,   0.7427,   0.5633,-.0145755, .0288293,11,slope,9999
+"Europe","pretrend","no differential pre-trend at t=-4 (H0: coefficient on d0 = 0)",-.0020439,  -0.1262,   0.9153,-.0363745, .0350007,29,slope,9999
+"Europe","pretrend","no differential pre-trend at t=-3 (H0: coefficient on d1 = 0)", .0022311,   0.1810,   0.8742,-.0266181, .0295142,29,slope,9999
+"Europe","pretrend","no differential pre-trend at t=-2 (H0: coefficient on d2 = 0)",-.0063047,  -1.6839,   0.1759,-.0120662, .0019259,29,slope,9999
+"Europe","att","no average treatment effect in periods 0-3 (H0: coefficient on post = 0)",-.0029919,  -0.6981,   0.5549,-.0119419, .0054871,29,slope,9999
+"High Income","pretrend","no differential pre-trend at t=-4 (H0: coefficient on d0 = 0)",-.0000277,  -0.0044,   0.9973,-.0124153, .0137363,37,slope,9999
+"High Income","pretrend","no differential pre-trend at t=-3 (H0: coefficient on d1 = 0)", .0040888,   0.8802,   0.4522,-.0045908, .0143001,37,slope,9999
+"High Income","pretrend","no differential pre-trend at t=-2 (H0: coefficient on d2 = 0)", .0019003,   0.7406,   0.5378,-.0034584, .0066949,37,slope,9999
+"High Income","att","no average treatment effect in periods 0-3 (H0: coefficient on post = 0)", .0051618,   1.3652,   0.3241,-.0035653, .0122266,37,slope,9999
+"High Income (excl. United States)","robustness_pretrend","no differential pre-trend at t=-4 (H0: coefficient on dX0 = 0)",-.0031102,  -0.3485,   0.7627,-.0207679, .0174904,37,slope,9999
+"High Income (excl. United States)","robustness_pretrend","no differential pre-trend at t=-3 (H0: coefficient on dX1 = 0)", .0001317,   0.0196,   0.9875,-.0131909, .0156748,37,slope,9999
+"High Income (excl. United States)","robustness_pretrend","no differential pre-trend at t=-2 (H0: coefficient on dX2 = 0)",-.0045916,  -2.3273,   0.0610, -.008278,-.0004714,37,slope,9999
+"High Income (excl. United States)","robustness_att","no average treatment effect in periods 0-3, excluding United States (H0: coefficient on post_x = 0)",-.0010441,  -0.2281,   0.8506, -.010604, .0075095,37,slope,9999
+"Middle Income","pretrend","no differential pre-trend at t=-4 (H0: coefficient on d0 = 0)", .0015243,   0.1822,   0.8522, -.020716, .0228194,16,slope,9999
+"Middle Income","pretrend","no differential pre-trend at t=-3 (H0: coefficient on d1 = 0)",-.0048675,  -0.5846,   0.9126,-.0405279, .0061176,16,slope,9999
+"Middle Income","pretrend","no differential pre-trend at t=-2 (H0: coefficient on d2 = 0)", .0032334,   0.4648,   0.7202,-.0225727, .0161642,16,slope,9999
+"Middle Income","att","no average treatment effect in periods 0-3 (H0: coefficient on post = 0)", .0032285,   0.5249,   0.7118,-.0136533, .0199712,16,slope,9999
+"Middle Income (excl. Thailand)","robustness_pretrend","no differential pre-trend at t=-4 (H0: coefficient on dX0 = 0)",-.0026738,  -0.2122,   0.8644, -.049804, .0368075,16,slope,9999
+"Middle Income (excl. Thailand)","robustness_pretrend","no differential pre-trend at t=-3 (H0: coefficient on dX1 = 0)",-.0139364,  -1.2483,   0.7001,-.0750925, .0089348,16,slope,9999
+"Middle Income (excl. Thailand)","robustness_pretrend","no differential pre-trend at t=-2 (H0: coefficient on dX2 = 0)",-.0002044,  -0.0232,   0.9932,-.0461061,  .024692,16,slope,9999
+"Middle Income (excl. Thailand)","robustness_att","no average treatment effect in periods 0-3, excluding Thailand (H0: coefficient on post_x = 0)",-.0025836,  -0.4449,   0.6876,-.0238975, .0137474,16,slope,9999
+"Eastern Europe","pretrend","no differential pre-trend at t=-4 (H0: coefficient on d0 = 0)", .0054078,   0.3284,   0.7767,-.0231154, .0864111,7,slope,9999
+"Eastern Europe","pretrend","no differential pre-trend at t=-3 (H0: coefficient on d1 = 0)", .0050491,   0.4799,   0.7786,-.0215022, .0532766,7,slope,9999
+"Eastern Europe","pretrend","no differential pre-trend at t=-2 (H0: coefficient on d2 = 0)",-.0075469,  -1.8358,   0.3175,-.0217064,  .020935,7,slope,9999
+"Eastern Europe","att","no average treatment effect in periods 0-3 (H0: coefficient on post = 0)",-.0042623,  -1.8253,   0.1606,-.0142773, .0019008,7,slope,9999
+"Southern Europe","pretrend","no differential pre-trend at t=-4 (H0: coefficient on d0 = 0)", .0063411,   0.3082,   0.8092,-.0887505, .1528363,7,slope,9999
+"Southern Europe","pretrend","no differential pre-trend at t=-3 (H0: coefficient on d1 = 0)", .0022567,   0.1535,   0.8824,-.0662898,  .115801,7,slope,9999
+"Southern Europe","pretrend","no differential pre-trend at t=-2 (H0: coefficient on d2 = 0)",-.0034578,  -1.6958,   0.4186,-.0142268, .0012536,7,slope,9999
+"Southern Europe","att","no average treatment effect in periods 0-3 (H0: coefficient on post = 0)",  .005191,   1.2782,   0.5663,-.0068731, .0462007,7,slope,9999
+"Fully Democratic Sample","pretrend","no differential pre-trend at t=-4 (H0: coefficient on d0 = 0)",-.0032802,  -0.5232,   0.6806,-.0143055, .0098123,49,slope,9999
+"Fully Democratic Sample","pretrend","no differential pre-trend at t=-3 (H0: coefficient on d1 = 0)",-.0038597,  -0.8395,   0.4937,-.0114404, .0057424,49,slope,9999
+"Fully Democratic Sample","pretrend","no differential pre-trend at t=-2 (H0: coefficient on d2 = 0)", .0003552,   0.1288,   0.9083,-.0041921, .0061152,49,slope,9999
+"Fully Democratic Sample","att","no average treatment effect in periods 0-3 (H0: coefficient on post = 0)", .0027934,   0.5147,   0.6973,-.0079436, .0141268,49,slope,9999
+"Transitioning sample","arm_equality","Arm A (populist-only) and Arm B (also exits democracy) have the same effect at t=-4 (H0: dA0 = dB0)",        .,   0.9670,   0.3508,-.0102879, .0467136,50,slope,9999
+"Transitioning sample","arm_equality","Arm A and Arm B have the same effect at t=-3 (H0: dA1 = dB1)",        .,   0.3641,   0.7815,-.0144595, .0493823,50,slope,9999
+"Transitioning sample","arm_equality","Arm A and Arm B have the same effect at t=-2 (H0: dA2 = dB2)",        .,   0.0897,   0.9493,-.0134559, .0345802,50,slope,9999
+"Transitioning sample","arm_equality","Arm A and Arm B have the same effect at t=0 (H0: dA4 = dB4)",        .,   0.5750,   0.7837,-.0071221, .0368665,50,slope,9999
+"Transitioning sample","arm_equality","Arm A and Arm B have the same effect at t=1 (H0: dA5 = dB5)",        .,  -1.8367,   0.1705,-.0206552, .0029764,50,slope,9999
+"Transitioning sample","arm_equality","Arm A and Arm B have the same effect at t=2 (H0: dA6 = dB6)",        .,  -0.6132,   0.6009,-.0248579, .0166082,50,slope,9999
+"Transitioning sample","arm_equality","Arm A and Arm B have the same effect at t=3 (H0: dA7 = dB7)",        .,  -0.8089,   0.4915,-.0293011, .0176627,50,slope,9999
+"Transitioning sample","arm_equality_postonly","Arm A and Arm B have the same effect at t=0, post-period-only test (H0: dA4 = dB4)",        .,   0.5750,   0.7876, -.007125,  .036563,50,slope,9999
+"Transitioning sample","arm_equality_postonly","Arm A and Arm B have the same effect at t=1, post-period-only test (H0: dA5 = dB5)",        .,  -1.8367,   0.1708,-.0206552, .0024137,50,slope,9999
+"Transitioning sample","arm_equality_postonly","Arm A and Arm B have the same effect at t=2, post-period-only test (H0: dA6 = dB6)",        .,  -0.6132,   0.5875,-.0238465, .0155968,50,slope,9999
+"Transitioning sample","arm_equality_postonly","Arm A and Arm B have the same effect at t=3, post-period-only test (H0: dA7 = dB7)",        .,  -0.8089,   0.4831,-.0291146, .0167013,50,slope,9999
+"Transitioning sample (excl. Thailand)","robustness_pretrend","no differential pre-trend at t=-4 (H0: coefficient on dX0 = 0)",-.0037798,  -0.6496,   0.5699, -.014012, .0077314,49,slope,9999
+"Transitioning sample (excl. Thailand)","robustness_pretrend","no differential pre-trend at t=-3 (H0: coefficient on dX1 = 0)",-.0036263,  -0.6908,   0.5472,-.0128581, .0061826,49,slope,9999
+"Transitioning sample (excl. Thailand)","robustness_pretrend","no differential pre-trend at t=-2 (H0: coefficient on dX2 = 0)", .0003121,   0.0800,   0.9494,-.0069737, .0075978,49,slope,9999
+"Transitioning sample (excl. Thailand)","robustness_att","no average treatment effect in periods 0-3, excluding Thailand (H0: coefficient on post_x = 0)", .0035579,   0.7319,   0.6033,-.0065946, .0131761,49,slope,9999

@@ -16,16 +16,22 @@ set more off
 if "`c(username)'" == "jpmvbastos" {
 	global path "/Users/jpmvbastos/Documents/GitHub"
 }
-if "`c(username)'" == "ncachosnky" {
-	global path "C:/Users/ncachanosky/OneDrive/Research/Working Papers/paper-JIBS"
-}
+if "`c(username)'" == "ncachanosky" {
+	global path "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS"
+}                
+
 
 
 //------------------------------------------------------------------------------
 // Load raw COMPUSTAT data and clean 
 //------------------------------------------------------------------------------
 
-use "$path/JIBS/data/raw/compustat.dta", clear
+use "$path/data/raw/compustat.dta", clear
+*use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\papers-JIBS\data\raw\compustat.dta", clear
+
+* Create dependent variable
+gen ch_at = ch / at
+
 
 // No variance | count if consol!="C" | county!="" -> 0
 drop consol county 
@@ -77,13 +83,13 @@ keep if ch!=.
 
 /// We collapse because some firms are interviewed twice within a year
 
-collapse (mean) aco ch che cheb chech chee chefs chenfd cmp dcsfd dd1 dvc /// 
+collapse (mean) aco ch ch_at che cheb chech chee chefs chenfd cmp dcsfd dd1 dvc /// 
 	dvp dvpdp dvt emp fca icapt lco opprft pi revt foreign, ///
 	by(gvkey iso year) 
 
 // Export Firm-level data
 //------------------------------------------------------------------------------
-save "$path/JIBS/data/compustat-firm-clean.dta", replace
+save "$path/data/compustat-firm-clean.dta", replace
 
 //------------------------------------------------------------------------------
 // Collapse and save country-level data
@@ -95,6 +101,7 @@ gen firms = 1
 collapse (mean) aco ch che cheb chech chee chefs chenfd cmp dcsfd dd1 dvc dvp /// 
 	dvpdp dvt emp fca icapt lco opprft pi revt foreign (sum) firms, by(iso year)
 	
-save "$path/JIBS/data/compustat-country-clean.dta", replace
+
+save "$path/data/compustat-country-clean.dta", replace
 	
 	

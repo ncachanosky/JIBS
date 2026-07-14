@@ -1,0 +1,55 @@
+country,pct_missing,n_obs
+Iceland,100,0
+Malta,100,0
+Taiwan,9.2307692,472
+Luxembourg,8.333334,22
+Thailand,8.1992779,75328
+South Korea,7.094595,550
+Chile,7.0522981,4692
+Japan,6.8647542,3636
+France,6.5656567,740
+Cyprus,6.25,30
+China,6.1011901,2524
+New Zealand,5.5851064,710
+Norway,5.1801801,842
+Sweden,4.7794118,518
+Peru,4.5454545,84
+Switzerland,4.5454545,84
+Uruguay,4.018405,18774
+Finland,3.8509071,146262
+Slovenia,3.7724013,21478
+Russia,3.6658652,3206
+Denmark,3.5714288,108
+Colombia,3.5067875,1706
+Romania,3.4807177,66274
+Germany,3.470716,21360
+Austria,3.2612104,74040
+Canada,3.125,62
+Australia,2.9487181,3028
+Estonia,2.9163966,11984
+Czech Republic,2.8846154,2222
+Lithuania,2.7877698,8648
+Egypt,2.7777779,70
+Latvia,2.6896405,37048
+Spain,2.6140895,17584
+Ireland,2.6113095,41472
+Belgium,2.5862069,5198
+Malaysia,2.5610716,98920
+Portugal,2.5,78
+Croatia,2.2727273,86
+Brazil,0,7528
+Bulgaria,0,8
+Ecuador,0,56
+Greece,0,1400
+Hungary,0,120
+India,0,440
+Indonesia,0,1000
+Israel,0,24
+Italy,0,24
+Mexico,0,32
+Poland,0,1736
+Slovakia,0,104
+South Africa,0,192
+Turkey,0,408
+United States,0,10808
+Venezuela,0,8

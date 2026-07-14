@@ -1,0 +1,19 @@
+iso,country,continent,region,subregion,wb_income_group,takeover_year,ideology,n_treated_firms
+ZAF,South Africa,Africa,Sub-Saharan Africa,Southern Africa,Middle Income,2009,Left,12
+ECU,Ecuador,Americas,Latin America and the Caribbean,South America,Middle Income,2007,Left,7
+USA,United States,Americas,Northern America,,High Income,2017,Right,233
+VEN,Venezuela,Americas,Latin America and the Caribbean,South America,Middle Income,1999,Left,1
+IND,India,Asia,Southern Asia,,Middle Income,2014,Right,14
+IDN,Indonesia,Asia,South-eastern Asia,,Middle Income,2014,Left,71
+ISR,Israel,Asia,Western Asia,,High Income,2009,Right,3
+JPN,Japan,Asia,Eastern Asia,,High Income,2001,Right,104
+KOR,South Korea,Asia,Eastern Asia,,High Income,2003,Right,10
+TWN,Taiwan,Asia,Eastern Asia,,,2000,Right,2
+THA,Thailand,Asia,South-eastern Asia,,Middle Income,2001,Right,652
+TUR,Turkey,Asia,Western Asia,,Middle Income,2003,Right,51
+BGR,Bulgaria,Europe,Eastern Europe,,Middle Income,2009,Right,1
+GRC,Greece,Europe,Southern Europe,,High Income,2015,Left,63
+HUN,Hungary,Europe,Eastern Europe,,High Income,2010,Right,13
+ITA,Italy,Europe,Southern Europe,,High Income,2001,Right,3
+POL,Poland,Europe,Eastern Europe,,High Income,2015,Right,131
+SVK,Slovakia,Europe,Eastern Europe,,High Income,2006,Left,13

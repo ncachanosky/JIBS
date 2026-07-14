@@ -16,15 +16,16 @@ set more off
 if "`c(username)'" == "jpmvbastos" {
 	global path "/Users/jpmvbastos/Documents/GitHub"
 }
-if "`c(username)'" == "ncachosnky" {
-	global path "C:/Users/ncachanosky/OneDrive/Research/Working Papers/paper-JIBS"
-}
+if "`c(username)'" == "ncachanosky" {
+	global path "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS"
+}  
+
 
 //------------------------------------------------------------------------------
 // 1. Preparation
 //------------------------------------------------------------------------------
 
-use "$path/JIBS/data/funke-ple-clean.dta", clear
+use "$path/data/funke-ple-clean.dta", clear
 
 // Set panel vars 
 xtset iso year
@@ -33,7 +34,7 @@ xtset iso year
 global pvars "continent region subregion wb_region country year independent pop lpop rpop iso"
 
 // Merge firm observation counts:
-merge 1:1 iso year using "$path/JIBS/data/compustat-country-clean.dta"
+merge 1:1 iso year using "$path/data/compustat-country-clean.dta"
 
 keep if _merge==3
 
@@ -100,7 +101,7 @@ gen long case_id = max(start_id, L1.start_id, L2.start_id, L3.start_id, ///
 drop case_start case_chronological_count start_id
 
 // Save a clean copy of the current data to use as a source
-save "$path/JIBS/data/prep-stacked.dta", replace
+save "$path/data/prep-stacked.dta", replace
 
 //------------------------------------------------------------------------------
 // 2. Loop through each case and append to temp file
@@ -116,7 +117,7 @@ save `stacked_results', emptyok
 // Now, loop through each case ID you just stored in the local macro `cases`.
 foreach case of local cases {
     // In each iteration, start with a fresh copy of the original data.
-    use "$path/JIBS/data/prep-stacked.dta", clear
+    use "$path/data/prep-stacked.dta", clear
 
     // Find the start and end year for the current case.
     qui summarize year if case_id == `case'
@@ -175,6 +176,6 @@ bysort id (year): gen relative_year = _n - 5
 tab relative_year // check 
 
 // Save -4 to 4 panel 
-save "$path/JIBS/data/clean-window-cases.dta", replace
+save "$path/data/clean-window-cases.dta", replace
 
 

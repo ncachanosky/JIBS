@@ -16,15 +16,15 @@ set more off
 if "`c(username)'" == "jpmvbastos" {
 	global path "/Users/jpmvbastos/Documents/GitHub"
 }
-if "`c(username)'" == "ncachosnky" {
-	global path "C:/Users/ncachanosky/OneDrive/Research/Working Papers/paper-JIBS"
-}
+if "`c(username)'" == "ncachanosky" {
+	global path "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS"
+}                
 
 //------------------------------------------------------------------------------
 // 2. Loop through each case and append to temp file
 //------------------------------------------------------------------------------
 
-use "$path/JIBS/data/prep-stacked.dta", clear
+use "$path/data/prep-stacked.dta", clear
 
 // Get a list of all unique treatment case IDs to loop over.
 levelsof case_id, local(cases)
@@ -41,8 +41,8 @@ foreach case of local cases {
 	//--------------------------------------------------------------------------
 	
     // In each iteration, start with a fresh copy of the original data.
-    use "$path/JIBS/data/prep-stacked.dta", clear
-
+    use "$path/data/prep-stacked.dta", clear
+		
     // Find the start and end year for the current case.
     qui summarize year if case_id == `case'
     local start_y = r(min)
@@ -88,8 +88,9 @@ foreach case of local cases {
 	// Merge Compustat for that cohort
 	//--------------------------------------------------------------------------
 	
-	merge 1:m iso year using "$path/JIBS/data/compustat-firm-clean.dta", ///
+	merge 1:m iso year using "$path/data/compustat-firm-clean.dta", ///
 		keep(match) nogen
+	
 	
 	egen obs_firm = count(gvkey), by(gvkey iso)
 	// ADJUST THIS COUNT TO THE NUMBER OF YEAR IN PANEL
@@ -193,12 +194,13 @@ gen treat = (case_id!=.)
 // Merge in Polity2 scores (country-year level; master iso is encoded alpha-3, polity iso is str3)
 rename iso iso_n
 decode iso_n, gen(iso)
-merge m:1 iso year using "$path/JIBS/data/polity-clean.dta", keep(master match) nogen
+merge m:1 iso year using "$path/data/polity-clean.dta", keep(master match) nogen
 drop iso
 rename iso_n iso
 
+
 // Save -4 to 4 panel 
-save "$path/JIBS/data/master-stacked-firm.dta", replace
+save "$path/data/master-stacked-firm.dta", replace
 
 //------------------------------------------------------------------------------
 // 4. Finalization for TWFE Panel 
@@ -207,7 +209,7 @@ save "$path/JIBS/data/master-stacked-firm.dta", replace
 duplicates drop gvkey iso year, force // Avoid repeated controls
 
 egen firm_check = count(gvkey), by(gvkey iso year)
-save "$path/JIBS/data/master-clean-twfe-firm.dta", replace
+save "$path/data/master-clean-twfe-firm.dta", replace
 
 
 

@@ -1,0 +1,7 @@
+scenario,arm,n_countries,year_min,year_max
+Wild (all),Treated,18,1995,2020
+Wild (all),Control,47,1995,2020
+Left populists,Treated,6,1995,2018
+Left populists,Control,47,1995,2020
+Right populists,Treated,12,1996,2020
+Right populists,Control,47,1995,2020

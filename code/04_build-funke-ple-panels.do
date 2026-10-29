@@ -24,24 +24,24 @@ if "`c(username)'" == "ncachosnky" {
 // 1. Load clean COMPUSTAT firm-level data and merge
 //------------------------------------------------------------------------------
 
-use "$path/JIBS/data/compustat-firm-clean.dta", clear 
+use "$path/data/compustat-firm-clean.dta", clear 
 
 // Merge 
-merge m:1 iso year using "$path/JIBS/data/funke-ple-clean.dta"
+merge m:1 iso year using "$path/data/funke-ple-clean.dta"
 keep if _merge==3
 drop _merge
 
-save "$path/JIBS/data/master-funke-ple-firm.dta", replace
+save "$path/data/master-funke-ple-firm.dta", replace
 
 //------------------------------------------------------------------------------
 // Load clean COMPUSTAT country-level data and merge
 //------------------------------------------------------------------------------
 
-use "$path/JIBS/data/compustat-country-clean.dta", clear 
+use "$path/data/compustat-country-clean.dta", clear 
 
 // Merge 
-merge 1:1 iso year using "$path/JIBS/data/funke-ple-clean.dta"
+merge 1:1 iso year using "$path/data/funke-ple-clean.dta"
 keep if _merge==3
 drop _merge
 
-save "$path/JIBS/data/master-funke-ple-country.dta", replace
+save "$path/data/master-funke-ple-country.dta", replace

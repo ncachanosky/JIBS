@@ -17,7 +17,7 @@ if "`c(username)'" == "jpmvbastos" {
 	global path "/Users/jpmvbastos/Documents/GitHub"
 }
 if "`c(username)'" == "ncachosnky" {
-	global path "C:/Users/ncachanosky/OneDrive/Research/Working Papers/paper-JIBS"
+	global path "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\paper-JIBS"
 }
 
 //==============================================================================
@@ -25,7 +25,7 @@ if "`c(username)'" == "ncachosnky" {
 //==============================================================================
 
 // Load V-Party Data
-use "$path/JIBS/data/raw/V-Dem-CPD-Party-V2.dta", clear
+use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\paper-JIBS\data\raw\V-Dem-CPD-Party-V2.dta", clear
 
 keep v2paenname v2paorname v2pashname v2paid pf_party_id country_name histname ///
 country_id country_text_id year gapstart gapend codingend ///
@@ -60,10 +60,10 @@ duplicates tag cow_code year, gen(dup)
 drop if dup==1 // 2 obs 
 drop dup
 
-save "$path/JIBS/data/v-party-country-clean.dta", replace
+save "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\paper-JIBS\data\v-party-country-clean.dta", replace
 
 // Load V-Party Data again
-use "$path/JIBS/data/raw/V-Dem-CPD-Party-V2.dta", clear
+use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\paper-JIBS\data\raw\V-Dem-CPD-Party-V2.dta", clear
 
 // Leaner version to get only score for leader party
 keep pf_party_id year v2xpa_popul COWcode country_text_id
@@ -78,7 +78,7 @@ duplicates tag cow_code leader_party_id year, gen(dup)
 drop if dup!=0
 drop dup
 
-save "$path/JIBS/data/v-party-leader-clean.dta", replace
+save "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\paper-JIBS\data\v-party-leader-clean.dta", replace
 
 
 //==============================================================================
@@ -93,7 +93,7 @@ save "$path/JIBS/data/v-party-leader-clean.dta", replace
 
 ==============================================================================*/
 
-use "$path/trade-ideology/data/raw/global_leader_ideologies.dta", clear
+use "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\paper-JIBS\data\raw\global_leader_ideologies.dta", clear
 
 keep if year >= 1985
 
@@ -105,7 +105,7 @@ drop if leader_party_id==.
 
 // Merge information about leader's party
 merge 1:1 leader_party_id cow_code year ///
-	using "$path/JIBS/data/v-party-leader-clean.dta"
+	using "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\paper-JIBS\data\v-party-leader-clean.dta"
 	
 // keep==1: We don't have party info, but still may have country info
 // drop==2: Parties other than the leader's party
@@ -114,7 +114,7 @@ keep if _merge==1 | _merge==3
 drop _merge
 
 // Merge broader information about country / parliament 
-merge 1:1 cow_code year using "$path/JIBS/data/v-party-country-clean.dta"
+merge 1:1 cow_code year using "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\paper-JIBS\data\v-party-country-clean.dta"
 
 // keep==1: Off-election years, we'll extend the data
 // Drop==2: nothing we can do
@@ -281,4 +281,4 @@ replace treat_leader_top10=0 if ///
 */	
 
 // Save
-save "$path/JIBS/data/v-party-clean.dta", replace
+save "C:\Users\ncachanosky\OneDrive\Research\Working_Papers\paper-JIBS\data\v-party-clean.dta", replace

@@ -17,7 +17,7 @@ if "`c(username)'" == "jpmvbastos" {
 	global path "/Users/jpmvbastos/Documents/GitHub"
 }
 if "`c(username)'" == "ncachanosky" {
-	global path "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/papers-JIBS"
+	global path "C:/Users/ncachanosky/OneDrive/Research/Working_Papers/paper-JIBS"
 }  
 
 

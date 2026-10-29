@@ -24,7 +24,7 @@ if "`c(username)'" == "ncachosnky" {
 //------------------------------------------------------------------------------
 // Load region ids 
 //------------------------------------------------------------------------------
-import excel "$path/JIBS/data/raw/UNSD-WB.xlsx", firstrow clear
+import excel "$path/data/raw/UNSD-WB.xlsx", firstrow clear
 
 rename ISOalpha3Code iso
 rename WBIncomeGroup wb_region
@@ -41,7 +41,7 @@ order iso continent region subregion wb_region
 // Merge opulism data and create treatment indicators
 //------------------------------------------------------------------------------
 
-merge 1:m iso using "$path/JIBS/data/raw/PLE_panel2.dta", ///
+merge 1:m iso using "$path/data/raw/PLE_panel2.dta", ///
 	keep(match using) nogen
 
 // Fix Taiwan
@@ -57,4 +57,4 @@ rename iso _iso
 encode _iso, gen(iso)
 drop _iso
 
-save "$path/JIBS/data/funke-ple-clean.dta", replace
+save "$path/data/funke-ple-clean.dta", replace

@@ -1,0 +1,81 @@
+outcome,spec,test_type,null_hypothesis,coefficient,t_stat,p_value,ci_low,ci_high,n_clusters,ebal_target,reps
+"ch_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-4 (H0: dL0 = dR0)",        .,  -0.0737,   0.9515,-.0393826, .0170344,54,level,9999
+"ch_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-3 (H0: dL1 = dR1)",        .,  -0.5742,   0.6528,-.0425038, .0085969,54,level,9999
+"ch_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-2 (H0: dL2 = dR2)",        .,  -0.1720,   0.8805,-.0262228, .0111269,54,level,9999
+"ch_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=0 (H0: dL4 = dR4)",        .,  -0.2492,   0.8263,-.0299862, .0118413,54,level,9999
+"ch_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=1 (H0: dL5 = dR5)",        .,  -0.8934,   0.5214,-.0253027,  .010313,54,level,9999
+"ch_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=2 (H0: dL6 = dR6)",        .,  -1.7270,   0.0914,-.0451115,-.0002009,54,level,9999
+"ch_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=3 (H0: dL7 = dR7)",        .,  -1.7367,   0.0451,-.0604127,-.0019153,54,level,9999
+"ch_at","Left vs Right populists","arm_equality_att","Left and Right populists have the same pooled post-treatment ATT (H0: postL = postR)",        .,  -1.3024,   0.2553,-.0369718, .0041029,54,level,9999
+"ch_at","Left vs Right populists","att_pooledweight","no average Left-populist treatment effect in periods 0-3, pooled-weight regression (H0: postL = 0)",-.0201461,  -2.6685,   0.0323,-.0525089,-.0059321,54,level,9999
+"ch_at","Left vs Right populists","att_pooledweight","no average Right-populist treatment effect in periods 0-3, pooled-weight regression (H0: postR = 0)",-.0095925,  -2.0780,   0.1228,-.0202478, .0005554,54,level,9999
+"act_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-4 (H0: dL0 = dR0)",        .,   1.5923,   0.2326,-.0199988, .0444878,54,level,9999
+"act_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-3 (H0: dL1 = dR1)",        .,   0.3695,   0.7468,-.0304723, .0196939,54,level,9999
+"act_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-2 (H0: dL2 = dR2)",        .,   0.6210,   0.6094,-.0138633, .0402467,54,level,9999
+"act_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=0 (H0: dL4 = dR4)",        .,   1.7061,   0.1600,-.0050301,  .021133,54,level,9999
+"act_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=1 (H0: dL5 = dR5)",        .,   1.7630,   0.1417,-.0034258, .0329009,54,level,9999
+"act_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=2 (H0: dL6 = dR6)",        .,   2.5436,   0.1299,-.0042677, .0466175,54,level,9999
+"act_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=3 (H0: dL7 = dR7)",        .,   0.4614,   0.6793,-.0616947, .0293117,54,level,9999
+"act_at","Left vs Right populists","arm_equality_att","Left and Right populists have the same pooled post-treatment ATT (H0: postL = postR)",        .,   1.7263,   0.2353,-.0170364, .0297164,54,level,9999
+"act_at","Left vs Right populists","att_pooledweight","no average Left-populist treatment effect in periods 0-3, pooled-weight regression (H0: postL = 0)", .0046238,   0.5646,   0.6105,-.0319423, .0212346,54,level,9999
+"act_at","Left vs Right populists","att_pooledweight","no average Right-populist treatment effect in periods 0-3, pooled-weight regression (H0: postR = 0)",-.0087271,  -1.7251,   0.1318,-.0181801, .0007259,54,level,9999
+"act_ex_ch_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-4 (H0: dL0 = dR0)",        .,   0.3590,   0.7555,-.0173451, .0368793,54,level,9999
+"act_ex_ch_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-3 (H0: dL1 = dR1)",        .,   0.1222,   0.9126,-.0218762, .0201789,54,level,9999
+"act_ex_ch_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-2 (H0: dL2 = dR2)",        .,  -0.0432,   0.9711,-.0190521, .0253707,54,level,9999
+"act_ex_ch_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=0 (H0: dL4 = dR4)",        .,   1.2966,   0.2486,-.0024815, .0257779,54,level,9999
+"act_ex_ch_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=1 (H0: dL5 = dR5)",        .,   1.9513,   0.0676, .0024646, .0592854,54,level,9999
+"act_ex_ch_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=2 (H0: dL6 = dR6)",        .,   3.0289,   0.0069,   .01482, .0778114,54,level,9999
+"act_ex_ch_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=3 (H0: dL7 = dR7)",        .,   4.1657,   0.0149, .0171519, .0501931,54,level,9999
+"act_ex_ch_at","Left vs Right populists","arm_equality_att","Left and Right populists have the same pooled post-treatment ATT (H0: postL = postR)",        .,   3.0074,   0.0070, .0107017, .0498546,54,level,9999
+"act_ex_ch_at","Left vs Right populists","att_pooledweight","no average Left-populist treatment effect in periods 0-3, pooled-weight regression (H0: postL = 0)", .0252389,   3.7198,   0.0261, .0122215, .0526841,54,level,9999
+"act_ex_ch_at","Left vs Right populists","att_pooledweight","no average Right-populist treatment effect in periods 0-3, pooled-weight regression (H0: postR = 0)", .0006531,   0.1301,   0.9090,-.0098289, .0111352,54,level,9999
+"ppent_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-4 (H0: dL0 = dR0)",        .,  -1.8347,   0.3047,-.0320765, .0171856,54,level,9999
+"ppent_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-3 (H0: dL1 = dR1)",        .,   0.3219,   0.7772,-.0073162, .0223637,54,level,9999
+"ppent_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-2 (H0: dL2 = dR2)",        .,  -2.0578,   0.2441,-.0377584, .0069364,54,level,9999
+"ppent_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=0 (H0: dL4 = dR4)",        .,   0.2356,   0.8956, -.036212, .0457447,54,level,9999
+"ppent_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=1 (H0: dL5 = dR5)",        .,  -0.3012,   0.7767,-.0419182,  .024867,54,level,9999
+"ppent_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=2 (H0: dL6 = dR6)",        .,  -0.3793,   0.8163,-.0514819, .0408762,54,level,9999
+"ppent_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=3 (H0: dL7 = dR7)",        .,  -0.3174,   0.8001,-.0458881, .0470471,54,level,9999
+"ppent_at","Left vs Right populists","arm_equality_att","Left and Right populists have the same pooled post-treatment ATT (H0: postL = postR)",        .,  -0.2086,   0.8683, -.042172, .0373208,54,level,9999
+"ppent_at","Left vs Right populists","att_pooledweight","no average Left-populist treatment effect in periods 0-3, pooled-weight regression (H0: postL = 0)",-.0051952,  -0.3388,   0.7945,-.0423514, .0459258,54,level,9999
+"ppent_at","Left vs Right populists","att_pooledweight","no average Right-populist treatment effect in periods 0-3, pooled-weight regression (H0: postR = 0)",-.0020863,  -0.5654,   0.5393, -.008587, .0031955,54,level,9999
+"ivaeq_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-4 (H0: dL0 = dR0)",        .,   1.0614,   0.4319,-.0044762, .0101922,54,level,9999
+"ivaeq_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-3 (H0: dL1 = dR1)",        .,  -0.7929,   0.5273,-.0073469, .0075161,54,level,9999
+"ivaeq_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-2 (H0: dL2 = dR2)",        .,  -0.7664,   0.7747,-.0084982, .0037705,54,level,9999
+"ivaeq_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=0 (H0: dL4 = dR4)",        .,   2.7562,   0.0411, .0031469, .0342676,54,level,9999
+"ivaeq_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=1 (H0: dL5 = dR5)",        .,   1.7738,   0.2886,-.0027304, .0315511,54,level,9999
+"ivaeq_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=2 (H0: dL6 = dR6)",        .,   3.1335,   0.0141, .0060779, .0314072,54,level,9999
+"ivaeq_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=3 (H0: dL7 = dR7)",        .,   2.6069,   0.0114, .0044217, .0419692,54,level,9999
+"ivaeq_at","Left vs Right populists","arm_equality_att","Left and Right populists have the same pooled post-treatment ATT (H0: postL = postR)",        .,   2.7600,   0.0161, .0037797, .0326289,54,level,9999
+"ivaeq_at","Left vs Right populists","att_pooledweight","no average Left-populist treatment effect in periods 0-3, pooled-weight regression (H0: postL = 0)", .0177535,   2.6323,   0.0567, .0028488, .0319131,54,level,9999
+"ivaeq_at","Left vs Right populists","att_pooledweight","no average Right-populist treatment effect in periods 0-3, pooled-weight regression (H0: postR = 0)",-.0012099,  -1.4766,   0.1770,-.0025681, .0003293,54,level,9999
+"ivao_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-4 (H0: dL0 = dR0)",        .,   1.5898,   0.3286,-.0274458, .0271446,54,level,9999
+"ivao_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-3 (H0: dL1 = dR1)",        .,   1.9237,   0.1697,-.0036857, .0218348,54,level,9999
+"ivao_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-2 (H0: dL2 = dR2)",        .,   0.7139,   0.5558,-.0087429, .0102363,54,level,9999
+"ivao_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=0 (H0: dL4 = dR4)",        .,  -1.6876,   0.3859,  -.02936, .0069391,54,level,9999
+"ivao_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=1 (H0: dL5 = dR5)",        .,  -0.7500,   0.6434,-.0329751, .0247963,54,level,9999
+"ivao_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=2 (H0: dL6 = dR6)",        .,  -0.5502,   0.6788,-.0343624, .0272386,54,level,9999
+"ivao_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=3 (H0: dL7 = dR7)",        .,  -0.6197,   0.6765, -.036194, .0251466,54,level,9999
+"ivao_at","Left vs Right populists","arm_equality_att","Left and Right populists have the same pooled post-treatment ATT (H0: postL = postR)",        .,  -0.8348,   0.6616,-.0329156,  .019849,54,level,9999
+"ivao_at","Left vs Right populists","att_pooledweight","no average Left-populist treatment effect in periods 0-3, pooled-weight regression (H0: postL = 0)",-.0067517,  -0.5854,   0.6890,-.0296824, .0204779,54,level,9999
+"ivao_at","Left vs Right populists","att_pooledweight","no average Right-populist treatment effect in periods 0-3, pooled-weight regression (H0: postR = 0)", .0030545,   1.3819,   0.1897, -.000833, .0081568,54,level,9999
+"intan_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-4 (H0: dL0 = dR0)",        .,  -0.8557,   0.4268,-.0177107, .0139921,54,level,9999
+"intan_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-3 (H0: dL1 = dR1)",        .,  -1.6735,   0.3117,-.0147702,  .011963,54,level,9999
+"intan_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-2 (H0: dL2 = dR2)",        .,  -1.0611,   0.5226, -.021212, .0086958,54,level,9999
+"intan_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=0 (H0: dL4 = dR4)",        .,  -1.3641,   0.2176, -.012985, .0017242,54,level,9999
+"intan_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=1 (H0: dL5 = dR5)",        .,  -1.9936,   0.0898,-.0204398,-.0003323,54,level,9999
+"intan_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=2 (H0: dL6 = dR6)",        .,  -0.5907,   0.5958,  -.01809, .0048555,54,level,9999
+"intan_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=3 (H0: dL7 = dR7)",        .,  -0.4498,   0.6821,-.0319311, .0074937,54,level,9999
+"intan_at","Left vs Right populists","arm_equality_att","Left and Right populists have the same pooled post-treatment ATT (H0: postL = postR)",        .,  -1.0473,   0.3044,-.0195085, .0018203,54,level,9999
+"intan_at","Left vs Right populists","att_pooledweight","no average Left-populist treatment effect in periods 0-3, pooled-weight regression (H0: postL = 0)",-.0047871,  -1.2371,   0.2320,-.0233311, .0016121,54,level,9999
+"intan_at","Left vs Right populists","att_pooledweight","no average Right-populist treatment effect in periods 0-3, pooled-weight regression (H0: postR = 0)",-.0004642,  -0.2106,   0.8596,-.0053244, .0039099,54,level,9999
+"ao_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-4 (H0: dL0 = dR0)",        .,   0.5101,   0.6549,-.0135723, .0162889,54,level,9999
+"ao_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-3 (H0: dL1 = dR1)",        .,   0.6223,   0.4811,-.0033178, .0115951,54,level,9999
+"ao_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=-2 (H0: dL2 = dR2)",        .,   3.4637,   0.0102, .0084025, .0376468,54,level,9999
+"ao_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=0 (H0: dL4 = dR4)",        .,  -1.9047,   0.2259, -.028411, .0012807,54,level,9999
+"ao_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=1 (H0: dL5 = dR5)",        .,  -0.1829,   0.8460,-.0150856, .0254211,54,level,9999
+"ao_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=2 (H0: dL6 = dR6)",        .,  -0.8038,   0.4808,-.0168308, .0064977,54,level,9999
+"ao_at","Left vs Right populists","arm_equality","Left and Right populists have the same effect at t=3 (H0: dL7 = dR7)",        .,  -0.4105,   0.7026,-.0180641, .0219655,54,level,9999
+"ao_at","Left vs Right populists","arm_equality_att","Left and Right populists have the same pooled post-treatment ATT (H0: postL = postR)",        .,  -0.9707,   0.5715,-.0169689, .0096391,54,level,9999
+"ao_at","Left vs Right populists","att_pooledweight","no average Left-populist treatment effect in periods 0-3, pooled-weight regression (H0: postL = 0)", .0016062,   0.3105,   0.7847,-.0086356, .0189302,54,level,9999
+"ao_at","Left vs Right populists","att_pooledweight","no average Right-populist treatment effect in periods 0-3, pooled-weight regression (H0: postR = 0)", .0070298,   2.8667,   0.0474,  .001366, .0135027,54,level,9999
